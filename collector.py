@@ -114,7 +114,9 @@ class Collector:
     def sensor_readings_to_df(self):
         # Merge the readings
         readings = {sensor: self.sensors[sensor]['readings'] for sensor in self.sensors}
-        return pd.DataFrame(readings)
+        df = pd.DataFrame(readings)
+        df.index.name = 'Timestamp'
+        return df
 
 
     def plot_sensors(self, save_file='plot.png'):

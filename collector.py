@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from time import time, sleep
+from time import monotonic, sleep
 import concurrent.futures
 from redfish import redfish_client
 
@@ -58,8 +58,8 @@ class Collector:
             }
 
     def sample_power(self, runtime_secs=300, sample_hz=1):
-        start_time = time()
-        while time() < start_time + runtime_secs:
+        start_time = monotonic()
+        while monotonic() < start_time + runtime_secs:
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 # Start the load operations and mark each future with its board_path
                 future_to_board = {
@@ -73,17 +73,19 @@ class Collector:
                     except Exception as e:
                         print(f'{board} generated an exception: {e}')
                     else:
-                        time_delta = time() - start_time
+                        time_delta = monotonic() - start_time
                         self.boards[board]['power'][time_delta] = power
                         print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
 
             sleep(1/sample_hz)
 
     def sample_sensors(self, runtime_secs=300, sample_hz=1):
-        start_time = time()
+        start_time = monotonic()
         sample_interval = 1/sample_hz
-        while time() < start_time + runtime_secs:
-            sample_start = time()
+        print(f"{sample_interval=}s")
+        while monotonic() < start_time + runtime_secs:
+            sample_start = monotonic()
+            print(f"{sample_start=}")
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
                 future_to_sensor = {
                     executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors
@@ -95,11 +97,11 @@ class Collector:
                     except Exception as e:
                         print(f'Sensor {sensor} generated an exception: {e}')
                     else:
-                        time_delta = time() - start_time
+                        time_delta = monotonic() - start_time
                         self.sensors[sensor]['readings'][time_delta] = reading
                         print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
-                sleep_time = time() - sample_start - sample_interval
+                sleep_time = monotonic() - sample_start - sample_interval
                 print(f"{sleep_time=}")
                 if sleep_time > 0:
                     print("sleeping")

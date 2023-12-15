@@ -12,29 +12,29 @@ HTTP_OK_200 = 200
 
 class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
-        """Sets up the bmc client - DOES NOT save the credentials"""
-        bmc_url = f"https://{bmc_hostname}"
-        print(f"Connecting to {bmc_url} ...")
+        '''Sets up the bmc client - DOES NOT save the credentials'''
+        bmc_url = f'https://{bmc_hostname}'
+        print(f'Connecting to {bmc_url} ...')
         self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
-        print("... connected")
+        print('... connected')
         self.boards = {}
         self.sensors = {}
-        self.bmc.login(auth="session")
-        print("Logged in")
+        self.bmc.login(auth='session')
+        print('Logged in')
 
         self.init_boards()
         self.find_power_sensors()
 
     def init_boards(self):
         self.motherboard_path = None
-        chassis_path = REDFISH_BASE + "/Chassis"
+        chassis_path = REDFISH_BASE + '/Chassis'
         response = self.bmc.get(chassis_path)
         if response.status == HTTP_OK_200:
             response_data = json.loads(response.text)
-            paths = [member["@odata.id"] for member in response_data["Members"]]
+            paths = [member['@odata.id'] for member in response_data['Members']]
             for path in paths:
-                ending = path.split("/")[-1]
-                if ending.lower() in {"motherboard", "self", "gpu_board"}:
+                ending = path.split('/')[-1]
+                if ending.lower() in {'motherboard', 'self', 'gpu_board'}:
                     self.boards[ending] = {
                         'power': {}
                     }
@@ -42,14 +42,15 @@ class Collector:
     def find_power_sensors(self):
         sensors = []
         for board in self.boards:
-            response = self._redfish_get(f"{REDFISH_BASE}/{board}/Sensors")
-            sensors += [s['@odata.id'] for s in response["Members"]
+            response = self._redfish_get(f'{REDFISH_BASE}/{board}/Sensors')
+            sensors += [s.get('@odata.id', '') for s in response.get('Members', [])
                 if 'pwr' in s.lower or 'power' in s.lower()
             ]
 
         for sensor in sensors:
             print(sensor)
-            self.sensors[sensor] = {}
+            if sensor is not None:
+                self.sensors[sensor] = {}
 
 
 
@@ -60,7 +61,7 @@ class Collector:
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 # Start the load operations and mark each future with its board_path
                 future_to_board = {
-                    executor.submit(self.get_power, f"{REDFISH_BASE}/Chassis/{board}"): board
+                    executor.submit(self.get_power, f'{REDFISH_BASE}/Chassis/{board}'): board
                     for board in self.boards
                 }
                 for future in concurrent.futures.as_completed(future_to_board):
@@ -68,19 +69,20 @@ class Collector:
                     try:
                         power = future.result()
                     except Exception as e:
-                        print(f"{board} generated an exception: {e}")
+                        print(f'{board} generated an exception: {e}')
                     else:
                         time_delta = time() - start_time
                         self.boards[board]['power'][time_delta] = power
-                        print(f"{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts")
+                        print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
 
             sleep(1/sample_hz)
 
     def get_power(self, board_path):
-        data = self._redfish_get(f"{board_path}/Power")
-        return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
+        data = self._redfish_get(f'{board_path}/Power')
+        return data.get('PowerControl', [{}])[0].get('PowerConsumedWatts')
 
     def _redfish_get(self, path):
+        print(f'GETing: {path}')
         response = self.bmc.get(path)
         if response.status == HTTP_OK_200:
             return json.loads(response.text)
@@ -96,7 +98,7 @@ class Collector:
     #         pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     def parse_cli():
         parser = argparse.ArgumentParser(
@@ -124,4 +126,4 @@ if __name__ == "__main__":
     for board in collector.boards:
         boardname = Path(board).name
         print(boardname)
-        print("\t", collector.boards[board]['power'])
+        print('\t', collector.boards[board]['power'])

@@ -42,7 +42,7 @@ class Collector:
     def find_power_sensors(self):
         sensors = []
         for board in self.boards:
-            response = _redfish_get(f"{REDFISH_BASE}/{board}/Sensors")
+            response = self._redfish_get(f"{REDFISH_BASE}/{board}/Sensors")
             sensors += [s['@odata.id'] for s in response["Members"]
                 if 'pwr' in s.lower or 'power' in s.lower()
             ]

@@ -9,10 +9,6 @@ from cli_parser import parse_cli
 REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
 
-
-
-
-
 class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
         '''Sets up the bmc client - DOES NOT save the credentials'''
@@ -51,7 +47,6 @@ class Collector:
 
 
         for sensor in power_sensors:
-            print(sensor)
             sensor_name = Path(sensor).name
             self.sensors[sensor_name] = {
                 'path': sensor,
@@ -60,7 +55,7 @@ class Collector:
                 'kind': 'POWER'
             }
 
-    def sample_power(self, runtime_secs=300, sample_hz=1):
+    def sample_power(self, runtime_secs=300):
         start_time = monotonic()
         while monotonic() < start_time + runtime_secs:
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -78,9 +73,8 @@ class Collector:
                     else:
                         time_delta = monotonic() - start_time
                         self.boards[board]['power'][time_delta] = power
-                        print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
+                        # print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
 
-            sleep(1/sample_hz)
 
     def sample_sensors(self, runtime_secs=300):
         start_time = monotonic()
@@ -89,6 +83,7 @@ class Collector:
                 future_to_sensor = {
                     executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors
                 }
+                time_delta = monotonic() - start_time # All samples have same timestamp
                 for future in concurrent.futures.as_completed(future_to_sensor):
                     sensor = future_to_sensor[future]
                     try:
@@ -96,9 +91,8 @@ class Collector:
                     except Exception as e:
                         print(f'Sensor {sensor} generated an exception: {e}')
                     else:
-                        time_delta = monotonic() - start_time
                         self.sensors[sensor]['readings'][time_delta] = reading
-                        print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
+                        # print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
     def read_sensor(self, sensor):
         sensor_path = self.sensors[sensor]['path']
@@ -121,9 +115,6 @@ class Collector:
 
 
 if __name__ == '__main__':
-
-
-
     args = parse_cli()
     collector = Collector(
         args.bmc_hostname,
@@ -147,8 +138,3 @@ if __name__ == '__main__':
 
         for timestamp, reading in collector.sensors[sensor]['readings'].items():
             print(f"{timestamp:6.1f} {reading: 5.1f}")
-
-
-
-
-

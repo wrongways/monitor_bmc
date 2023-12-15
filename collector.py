@@ -12,9 +12,9 @@ HTTP_OK_200 = 200
 class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
         """Sets up the bmc client - DOES NOT save the credentials"""
-        self.bmc_url = f"https://{bmc_hostname}"
-        print(f"Connecting to {self.bmc_url} ...")
-        self.bmc = redfish_client(self.bmc_url, bmc_username, bmc_password)
+        bmc_url = f"https://{bmc_hostname}"
+        print(f"Connecting to {bmc_url} ...")
+        self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
         print("... connected")
         self.boards = {}
         self.bmc.login(auth="session")
@@ -24,7 +24,7 @@ class Collector:
 
     def init_boards(self):
         self.motherboard_path = None
-        chassis_path = self.bmc_url + REDFISH_BASE + "/Chassis"
+        chassis_path = REDFISH_BASE + "/Chassis"
         response = self.bmc.get(chassis_path)
         if response.status == HTTP_OK_200:
             response_data = json.loads(response.text)
@@ -47,7 +47,7 @@ class Collector:
             time.sleep(1/sample_hz)
 
     def get_power(self, board_path):
-        data = self._redfish_get(f"{self.bmc_url}{board_path}/Power")
+        data = self._redfish_get(f"{board_path}/Power")
         return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
 
     def _redfish_get(self, path):

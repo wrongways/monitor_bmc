@@ -128,12 +128,12 @@ class Collector:
 
 
     def max_values(self):
-        maxes = self.sensor_readings_to_df().max()
-        max_max = maxes.max()
-        for reading in maxes:
-            print(reading)
+        df = self.sensor_readings_to_df()
+        print("Max readings per sensor")
+        for column in dataframe:
+            print(f"{colum:>25} {df[column].max():.1f} Watts")
 
-        print(f"Max power drawn: {max_max:,.1f} Watts")
+        print(f"Max power drawn: {df.max().max():,.1f} Watts")
 
 
 if __name__ == '__main__':

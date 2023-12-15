@@ -164,16 +164,11 @@ if __name__ == "__main__":
     #     print(boardname)
     #     print('\t', collector.boards[board]['power'])
 
-    for sensor, info in collector.sensors.items():
-        print(f"{sensor:>25} {info['path']}")
+    print("Sensors:")
+    for sensor in collector.sensors:
+        print(f"\t{sensor}")
 
     collector.sample_sensors(args.collect_duration)
-    for sensor in collector.sensors:
-        print(sensor)
-        print("=" * len(sensor), end="\n\n")
-
-        for timestamp, reading in collector.sensors[sensor]["readings"].items():
-            print(f"{timestamp:6.1f} {reading: 5.1f}")
 
     print(collector.sensor_readings_to_df())
     host = args.bmc_hostname.replace("bmc", "")

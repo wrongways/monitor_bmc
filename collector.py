@@ -133,16 +133,15 @@ class Collector:
         return df
 
     def plot_sensors(self, save_file="plot.png"):
-        df = self.sensor_readings_to_df()
+        df = self.sensor_readings_to_df()[self.power_sensors]
         df.plot(title=f"Power Draws {self.bmc_hostname}")
         plt.savefig(save_file, dpi=140)
 
     def save_to_excel(self, filename="sensors.xlsx"):
-        self.sensor_readings_to_df().to_excel(filename)
+        self.sensor_readings_to_df()[self.power_sensors].to_excel(filename)
 
     def max_power_values(self):
-        power_cols = [s for s in self.sensors if 'power' in s or 'pwr' in s]
-        df = self.sensor_readings_to_df()[power_cols]
+        df = self.sensor_readings_to_df()[self.power_sensors]
         print("Max readings per sensor")
         for column in df:
             print(f"{column:>25}: {df[column].max():.1f} Watts")

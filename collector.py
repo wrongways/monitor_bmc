@@ -2,18 +2,17 @@ import json
 from pathlib import Path
 from time import time
 from redfish import redfish_client
-from config import SETTINGS
-
+import argparse
 
 REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
 
 
 class Collector:
-    def __init__(self, bmc_url, bmc_username, bmc_password):
+    def __init__(self, bmc_hostname, bmc_username, bmc_password):
         """Sets up the bmc client - DOES NOT save the credentials"""
-        self.bmc_url = bmc_url
-        self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
+        self.bmc_url = f"https://{bmc_hostname}"
+        self.bmc = redfish_client(self.bmc_url, bmc_username, bmc_password)
         self.boards = {}
 
         self.bmc.login(auth="session")
@@ -44,7 +43,7 @@ class Collector:
             time.sleep(1/sample_hz)
 
     def get_power(self, board_path):
-        data = self._redfish_get(f"{SETTINGS.bmc_url}{board_path}/Power")
+        data = self._redfish_get(f"{self.bmc_url}{board_path}/Power")
         return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
 
     def _redfish_get(self, path):
@@ -61,7 +60,29 @@ class Collector:
 
 
 if __name__ == "__main__":
-    collector = Collector()
+
+    def parse_cli():
+        parser = argparse.ArgumentParser(
+            description='Tool to collect power data from Redfish BMC'
+        )
+
+        parser.add_argument('--bmc_hostname', type=str,
+                            help='The hostname of the bmc')
+
+        parser.add_argument('--bmc_userame', type=str,
+                            help='The bmc user/login name')
+
+        parser.add_argument('--bmc_password', type=str,
+                            help='Password for the bmc user')
+
+        return parser.parse_args()
+
+    args = parse_cli()
+    collector = Collector(
+        args.bmc_hostname,
+        args.bmc_username,
+        args.bmc_password
+    )
     collector.sample_power(10, 1)
     for board, samples in enumerate(collector.boards):
         boardname = Path(board).name

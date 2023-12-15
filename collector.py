@@ -102,6 +102,12 @@ class Collector:
                 if sleep_time > 0:
                     sleep(sleep_time)
 
+
+    def read_sensor(self, sensor):
+        sensor_path = self.sensors[sensor]['path']
+        response = self._redfish_get(sensor_path)
+        return response["Reading"] # Need to ensure that this is standardized
+
     def get_power(self, board_path):
         data = self._redfish_get(f'{board_path}/Power')
         return data.get('PowerControl', [{}])[0].get('PowerConsumedWatts')

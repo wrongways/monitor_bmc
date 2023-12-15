@@ -4,10 +4,14 @@ from pathlib import Path
 from time import monotonic, sleep
 import concurrent.futures
 from redfish import redfish_client
+from cli_parser import parse_cli
 
 
 REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
+
+
+
 
 
 class Collector:
@@ -120,6 +124,7 @@ class Collector:
 if __name__ == '__main__':
 
 
+
     args = parse_cli()
     collector = Collector(
         args.bmc_hostname,
@@ -139,26 +144,12 @@ if __name__ == '__main__':
     collector.sample_sensors(20)
     for sensor in collector.sensors:
         print(sensor)
-        print("=" * len(sensor) end='\n\n')
+        print("=" * len(sensor), end='\n\n')
 
         for timestamp, reading in collector.sensors[sensor]['readings'].items():
             print(f"{timestamp:6.1f} {reading: 5.1f}")
 
 
 
-    def parse_cli():
-        parser = argparse.ArgumentParser(
-            description='Tool to collect power data from Redfish BMC'
-        )
 
-        parser.add_argument('--bmc_hostname', type=str,
-                            help='The hostname of the bmc')
-
-        parser.add_argument('--bmc_username', type=str,
-                            help='The bmc user/login name')
-
-        parser.add_argument('--bmc_password', type=str,
-                            help='Password for the bmc user')
-
-        return parser.parse_args()
 

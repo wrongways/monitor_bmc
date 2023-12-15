@@ -131,7 +131,7 @@ class Collector:
         df = self.sensor_readings_to_df()
         print("Max readings per sensor")
         for column in df:
-            print(f"{colum:>25} {df[column].max():.1f} Watts")
+            print(f"{column:>25} {df[column].max():.1f} Watts")
 
         print(f"Max power drawn: {df.max().max():,.1f} Watts")
 

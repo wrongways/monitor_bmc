@@ -103,9 +103,9 @@ class Collector:
 
                 sleep_time = monotonic() - sample_start - sample_interval
                 print(f"{sleep_time=}")
-                if sleep_time > 0:
-                    print("sleeping")
-                    sleep(sleep_time)
+                # if sleep_time > 0:
+                #     print("sleeping")
+                #     sleep(sleep_time)
 
 
     def read_sensor(self, sensor):
@@ -170,5 +170,5 @@ if __name__ == '__main__':
     collector.sample_sensors(20)
     for sensor in collector.sensors:
         print(sensor)
-        for timestamp, reading in collector.sensors[sensor]['readings']:
+        for timestamp, reading in collector.sensors[sensor]['readings'].items():
             print(f"{timestamp:6.1f} {reading: 5.1f}")

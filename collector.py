@@ -50,7 +50,12 @@ class Collector:
         for sensor in power_sensors:
             print(sensor)
             sensor_name = Path(sensor).name
-            self.sensors[sensor_name] = {'path': sensor}
+            self.sensors[sensor_name] = {
+                'path': sensor,
+                'readings': {},
+                # TODO: can get this from ReadingType returned by sensor
+                'kind': 'POWER'
+            }
 
     def sample_power(self, runtime_secs=300, sample_hz=1):
         start_time = time()
@@ -73,6 +78,29 @@ class Collector:
                         print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
 
             sleep(1/sample_hz)
+
+    def sample_sensors(self, runtime_secs=300, sample_hz=1):
+        start_time = time()
+        sample_interval = 1/sample_hz
+        while sample_start := time() < start_time + runtime_secs:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
+                future_to_sensor = {
+                    executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors
+                }
+                for future in concurrent.futures.as_completed(future_to_sensor):
+                    sensor = future_to_sensor[future]
+                    try:
+                        reading = future.result()
+                    except Exception as e:
+                        print(f'Sensor {sensor} generated an exception: {e}')
+                    else:
+                        time_delta = time() - start_time
+                        self.sensors[sensor]['readings'][time_delta] = reading
+                        print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
+
+                sleep_time = time() - (sample_start + sample_interval)
+                if sleep_time > 0:
+                    sleep(sleep_time)
 
     def get_power(self, board_path):
         data = self._redfish_get(f'{board_path}/Power')
@@ -119,11 +147,17 @@ if __name__ == '__main__':
         args.bmc_username,
         args.bmc_password
     )
-    collector.sample_power(10, 1)
-    for board in collector.boards:
-        boardname = Path(board).name
-        print(boardname)
-        print('\t', collector.boards[board]['power'])
+    # collector.sample_power(10, 1)
+    # for board in collector.boards:
+    #     boardname = Path(board).name
+    #     print(boardname)
+    #     print('\t', collector.boards[board]['power'])
 
     for sensor, info in collector.sensors.items():
         print(f"{sensor:>25} {info['path']}")
+
+    collector.sample_sensors(20)
+    for sensor in collector.sensors:
+        print(sensor)
+        for timestamp, reading in collector.sensors[sensor]['readings']:
+            print(f"{timestamp:6.1f} {reading: 5.1f}")

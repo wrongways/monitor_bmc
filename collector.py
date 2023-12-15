@@ -20,7 +20,7 @@ class Collector:
 
     def init_boards(self):
         self.motherboard_path = None
-        chassis_path = self.hosturl + REDFISH_BASE + "/Chassis"
+        chassis_path = self.bmc_url + REDFISH_BASE + "/Chassis"
         response = self.bmc.get(chassis_path)
         if response.status == HTTP_OK_200:
             response_data = json.loads(response.text)

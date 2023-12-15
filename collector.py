@@ -122,7 +122,7 @@ class Collector:
     def plot_sensors(self, save_file='plot.png'):
         df = self.sensor_readings_to_df()
         df.plot()
-        plt.save(save_file)
+        plt.savefig(save_file, dpi=140)
 
 
 if __name__ == '__main__':

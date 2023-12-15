@@ -82,7 +82,8 @@ class Collector:
     def sample_sensors(self, runtime_secs=300, sample_hz=1):
         start_time = time()
         sample_interval = 1/sample_hz
-        while sample_start := time() < start_time + runtime_secs:
+        while time() < start_time + runtime_secs:
+            sample_start = time()
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
                 future_to_sensor = {
                     executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors

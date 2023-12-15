@@ -33,24 +33,25 @@ class Collector:
             response_data = json.loads(response.text)
             paths = [member['@odata.id'] for member in response_data['Members']]
             for path in paths:
-                ending = path.split('/')[-1]
-                if ending.lower() in {'motherboard', 'self', 'gpu_board'}:
-                    self.boards[ending] = {
+                name = Path(path).name
+                if name.lower() in {'motherboard', 'self', 'gpu_board'}:
+                    self.boards[name] = {
                         'power': {}
                     }
 
     def find_power_sensors(self):
-        sensors = []
+        power_sensors = []
         for board in self.boards:
             response = self._redfish_get(f'{REDFISH_BASE}/Chassis/{board}/Sensors')
-            sensors += [s.get('@odata.id', '') for s in response.get('Members', [])
-                if 'pwr' in s.lower or 'power' in s.lower()
-            ]
+            sensors = [s.get('@odata.id', '') for s in response.get('Members', {})]
+            power_sensors.append(
+                [s for s in sensors if 'pwr' in s.lower or 'power' in s.lower()]
+            )
 
-        for sensor in sensors:
+        for sensor in power_sensors:
             print(sensor)
-            if sensor is not None:
-                self.sensors[sensor] = {}
+            sensor_name = Path(sensor).name
+                self.sensors[sensor_name] = {'path': sensor}
 
 
 
@@ -127,3 +128,6 @@ if __name__ == '__main__':
         boardname = Path(board).name
         print(boardname)
         print('\t', collector.boards[board]['power'])
+
+    for sensor, info in collector.sensors.items():
+        print(f"{sensor>25} {info['path']")

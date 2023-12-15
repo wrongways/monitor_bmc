@@ -4,6 +4,7 @@ from time import monotonic
 import concurrent.futures
 from redfish import redfish_client
 import pandas as pd
+import matplotlib.pyplot as plt
 from cli_parser import parse_cli
 
 
@@ -118,8 +119,10 @@ class Collector:
         return pd.DataFrame(readings)
 
 
-    def plot_power(self, save_file=None):
-        pass
+    def plot_sensors(self, save_file=None):
+        df = self.sensor_readings_to_df()
+        df.plot()
+        plt.save('plot.png')
 
 
 if __name__ == '__main__':

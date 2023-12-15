@@ -51,10 +51,7 @@ class Collector:
         for sensor in power_sensors:
             print(sensor)
             sensor_name = Path(sensor).name
-                self.sensors[sensor_name] = {'path': sensor}
-
-
-
+            self.sensors[sensor_name] = {'path': sensor}
 
     def sample_power(self, runtime_secs=300, sample_hz=1):
         start_time = time()
@@ -66,7 +63,7 @@ class Collector:
                     for board in self.boards
                 }
                 for future in concurrent.futures.as_completed(future_to_board):
-                    board = future_to_path[future]
+                    board = future_to_board[future]
                     try:
                         power = future.result()
                     except Exception as e:
@@ -130,4 +127,4 @@ if __name__ == '__main__':
         print('\t', collector.boards[board]['power'])
 
     for sensor, info in collector.sensors.items():
-        print(f"{sensor>25} {info['path']")
+        print(f"{sensor:>25} {info['path']}")

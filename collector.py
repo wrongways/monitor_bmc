@@ -70,7 +70,9 @@ class Collector:
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 # Start the load operations and mark each future with its board_path
                 future_to_board = {
-                    executor.submit(self.get_power, f"{REDFISH_BASE}/Chassis/{board}"): board
+                    executor.submit(
+                        self.get_power, f"{REDFISH_BASE}/Chassis/{board}"
+                    ): board
                     for board in self._boards
                 }
                 for future in concurrent.futures.as_completed(future_to_board):
@@ -87,9 +89,12 @@ class Collector:
     def sample_sensors(self, collect_duration):
         start_time = monotonic()
         while monotonic() < start_time + collect_duration:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(self._sensors)) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=len(self._sensors)
+            ) as executor:
                 future_to_sensor = {
-                    executor.submit(self.read_sensor, sensor): sensor for sensor in self.power_sensors
+                    executor.submit(self.read_sensor, sensor): sensor
+                    for sensor in self.power_sensors
                 }
                 time_delta = monotonic() - start_time  # All samples have same timestamp
                 for future in concurrent.futures.as_completed(future_to_sensor):
@@ -120,18 +125,20 @@ class Collector:
 
     def sensor_readings_to_df(self):
         # Merge the readings
-        readings = {sensor: self._sensors[sensor]["readings"] for sensor in self._sensors}
+        readings = {
+            sensor: self._sensors[sensor]["readings"] for sensor in self._sensors
+        }
         df = pd.DataFrame(readings)
         df.index.name = "Timestamp"
         return df
 
-    def plot_sensors(self, save_file=f"{self.bmc_hostname}_plot.png"):
+    def plot_sensors(self, save_file="plot.png"):
         df = self.sensor_readings_to_df()
         plt.legend(prop={"size": 9})
         df.plot(title=f"Power Draws {self.bmc_hostname}")
         plt.savefig(save_file, dpi=140)
 
-    def save_to_excel(self, filename=f"{self.bmc_hostname}_sensors.xlsx"):
+    def save_to_excel(self, filename="sensors.xlsx"):
         self.sensor_readings_to_df().to_excel(filename)
 
     def max_values(self):
@@ -169,6 +176,7 @@ if __name__ == "__main__":
             print(f"{timestamp:6.1f} {reading: 5.1f}")
 
     print(collector.sensor_readings_to_df())
-    collector.plot_sensors()
-    collector.save_to_excel()
+    host = args.bmc_hostname.replace("bmc", "")
+    collector.plot_sensors(f"{host}_plot.png")
+    collector.save_to_excel(f"{host}_sensors.xlsx")
     collector.max_values()

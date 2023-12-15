@@ -2,7 +2,9 @@ import argparse
 
 
 def parse_cli():
-    parser = argparse.ArgumentParser(description="Tool to collect power data from Redfish BMC")
+    parser = argparse.ArgumentParser(
+        description="Tool to collect power data from Redfish BMC"
+    )
 
     parser.add_argument("--bmc_hostname", type=str, help="The hostname of the bmc")
 

@@ -69,7 +69,7 @@ if __name__ == "__main__":
         parser.add_argument('--bmc_hostname', type=str,
                             help='The hostname of the bmc')
 
-        parser.add_argument('--bmc_userame', type=str,
+        parser.add_argument('--bmc_username', type=str,
                             help='The bmc user/login name')
 
         parser.add_argument('--bmc_password', type=str,

@@ -53,7 +53,12 @@ class Collector:
                     "kind": "THERMAL",
                     "readings": {},
                 }
-            elif ("pwr" in name or "power" in name) and not name.startswith("cpu") and not name.startswith("rdstn_") and not name.startswith("vr_"):
+            elif (
+                ("pwr" in name or "power" in name)
+                and not name.startswith("cpu")
+                and not name.startswith("rdstn_")
+                and not name.startswith("vr_")
+            ):
                 self._sensors[name] = {"path": sensor, "kind": "POWER", "readings": {}}
 
     @property

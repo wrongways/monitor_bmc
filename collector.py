@@ -123,6 +123,19 @@ class Collector:
         plt.savefig(save_file, dpi=140)
 
 
+    def save_to_excel(self, filename='sensors.xlsx'):
+        self.sensor_readings_to_df().to_excel(filename)
+
+
+    def max_values(self):
+        maxes = self.sensor_readings_to_df().max()
+        max_max = maxes.max()
+        for reading in maxes:
+            print(reading)
+
+        print(f"Max power drawn: {max_max:,.1f} Watts")
+
+
 if __name__ == '__main__':
     args = parse_cli()
     collector = Collector(
@@ -151,3 +164,5 @@ if __name__ == '__main__':
 
     print(collector.sensor_readings_to_df())
     collector.plot_sensors()
+    collector.save_to_excel()
+    collector.max_values()

@@ -3,6 +3,7 @@ from pathlib import Path
 from time import monotonic, sleep
 import concurrent.futures
 from redfish import redfish_client
+import pandas as pd
 from cli_parser import parse_cli
 
 
@@ -110,6 +111,13 @@ class Collector:
             return json.loads(response.text)
         return None
 
+
+    def sensor_readings_to_df(self):
+        # Merge the readings
+        readings = {sensor: self.sensors[sensor]['readings'] for sensor in self.sensors}
+        return pd.DataFrame(readings)
+
+
     def plot_power(self, save_file=None):
         pass
 
@@ -138,3 +146,5 @@ if __name__ == '__main__':
 
         for timestamp, reading in collector.sensors[sensor]['readings'].items():
             print(f"{timestamp:6.1f} {reading: 5.1f}")
+
+    print(collector.sensor_readings_to_df())

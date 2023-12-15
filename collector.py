@@ -141,13 +141,14 @@ class Collector:
     def save_to_excel(self, filename="sensors.xlsx"):
         self.sensor_readings_to_df().to_excel(filename)
 
-    def max_values(self):
-        df = self.sensor_readings_to_df()
+    def max_power_values(self):
+        power_cols = [s for s in self.sensors if 'power' in s or 'pwr' in s]
+        df = self.sensor_readings_to_df()[power_cols]
         print("Max readings per sensor")
         for column in df:
-            print(f"{column:>25} {df[column].max():.1f} Watts")
+            print(f"{column:>25}: {df[column].max():.1f} Watts")
 
-        print(f"\n\nMax power drawn: {df.max().max():,.1f} Watts")
+        print(f"\nMax power drawn: {df.max().max():,.1f} Watts\n")
 
 
 if __name__ == "__main__":
@@ -174,4 +175,4 @@ if __name__ == "__main__":
     host = args.bmc_hostname.replace("bmc", "")
     collector.plot_sensors(f"{host}_plot.png")
     collector.save_to_excel(f"{host}_sensors.xlsx")
-    collector.max_values()
+    collector.max_power_values()

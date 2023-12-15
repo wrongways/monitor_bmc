@@ -133,7 +133,7 @@ class Collector:
         for column in df:
             print(f"{column:>25} {df[column].max():.1f} Watts")
 
-        print(f"Max power drawn: {df.max().max():,.1f} Watts")
+        print(f"\n\nMax power drawn: {df.max().max():,.1f} Watts")
 
 
 if __name__ == '__main__':

@@ -170,7 +170,7 @@ if __name__ == "__main__":
     collector.sample_sensors(args.collect_duration)
 
     print(collector.sensor_readings_to_df())
-    host = args.bmc_hostname.replace("bmc", "")
+    host = args.bmc_hostname.replace("bmc", "").replace("-", "")
     collector.plot_sensors(f"{host}_plot.png")
     collector.save_to_excel(f"{host}_sensors.xlsx")
     collector.max_power_values()

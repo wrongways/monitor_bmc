@@ -1,3 +1,5 @@
+import argparse
+
 def parse_cli():
     parser = argparse.ArgumentParser(
         description='Tool to collect power data from Redfish BMC'

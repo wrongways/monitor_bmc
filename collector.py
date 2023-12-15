@@ -1,8 +1,9 @@
+import argparse
 import json
 from pathlib import Path
 from time import time
 from redfish import redfish_client
-import argparse
+
 
 REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
@@ -12,10 +13,13 @@ class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
         """Sets up the bmc client - DOES NOT save the credentials"""
         self.bmc_url = f"https://{bmc_hostname}"
+        print(f"Connecting to {self.bmc_url} ...")
         self.bmc = redfish_client(self.bmc_url, bmc_username, bmc_password)
+        print("... connected")
         self.boards = {}
-
         self.bmc.login(auth="session")
+        print("Logged in")
+
         self.init_boards()
 
     def init_boards(self):

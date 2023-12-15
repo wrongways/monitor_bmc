@@ -18,10 +18,12 @@ class Collector:
         self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
         print("... connected")
         self.boards = {}
+        self.sensors = {}
         self.bmc.login(auth="session")
         print("Logged in")
 
         self.init_boards()
+        self.find_power_sensors()
 
     def init_boards(self):
         self.motherboard_path = None
@@ -33,28 +35,44 @@ class Collector:
             for path in paths:
                 ending = path.split("/")[-1]
                 if ending.lower() in {"motherboard", "self", "gpu_board"}:
-                    self.boards[path] = {
+                    self.boards[ending] = {
                         'power': {}
                     }
+
+    def find_power_sensors(self):
+        sensors = []
+        for board in self.boards:
+            response = _redfish_get(f"{REDFISH_BASE}/{board}/Sensors")
+            sensors += [s['@odata.id'] for s in response["Members"]
+                if 'pwr' in s.lower or 'power' in s.lower()
+            ]
+
+        for sensor in sensors:
+            print(sensor)
+            self.sensors[sensor] = {}
+
+
+
 
     def sample_power(self, runtime_secs=300, sample_hz=1):
         start_time = time()
         while time() < start_time + runtime_secs:
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 # Start the load operations and mark each future with its board_path
-                future_to_path = {
-                    executor.submit(self.get_power, path): path for path in self.boards
+                future_to_board = {
+                    executor.submit(self.get_power, f"{REDFISH_BASE}/Chassis/{board}"): board
+                    for board in self.boards
                 }
-                for future in concurrent.futures.as_completed(future_to_path):
-                    path = future_to_path[future]
+                for future in concurrent.futures.as_completed(future_to_board):
+                    board = future_to_path[future]
                     try:
                         power = future.result()
                     except Exception as e:
-                        print(f"{path} generated an exception: {e}")
+                        print(f"{board} generated an exception: {e}")
                     else:
                         time_delta = time() - start_time
-                        self.boards[path]['power'][time_delta] = power
-                        print(f"{time_delta:8.1f}{path:<20}: {power:.1f} Watts")
+                        self.boards[board]['power'][time_delta] = power
+                        print(f"{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts")
 
             sleep(1/sample_hz)
 

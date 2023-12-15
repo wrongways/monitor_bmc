@@ -98,8 +98,10 @@ class Collector:
                         self.sensors[sensor]['readings'][time_delta] = reading
                         print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
-                sleep_time = time() - (sample_start + sample_interval)
+                sleep_time = time() - sample_start - sample_interval
+                print(f"{sleep_time=}")
                 if sleep_time > 0:
+                    print("sleeping")
                     sleep(sleep_time)
 
 

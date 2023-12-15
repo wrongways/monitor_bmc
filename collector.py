@@ -8,52 +8,60 @@ import matplotlib.pyplot as plt
 from cli_parser import parse_cli
 
 
-REDFISH_BASE = '/redfish/v1'
+REDFISH_BASE = "/redfish/v1"
 HTTP_OK_200 = 200
+
 
 class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
-        '''Sets up the bmc client - DOES NOT save the credentials'''
-        bmc_url = f'https://{bmc_hostname}'
-        print(f'Connecting to {bmc_url} ...')
-        self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
-        self.boards = {}
-        self.sensors = {}
-        self.bmc.login(auth='session')
+        """Sets up the bmc client"""
+
+        bmc_url = f"https://{bmc_hostname}"
+        print(f"Connecting to {bmc_url} ...")
+        self._bmc = redfish_client(bmc_url, bmc_username, bmc_password)
+        self._boards = {}
+        self._sensors = {}
+        self._bmc.login(auth="session")
 
         self.init_boards()
-        self.find_power_sensors()
+        self.init_sensors()
 
     def init_boards(self):
         self.motherboard_path = None
-        chassis_path = REDFISH_BASE + '/Chassis'
-        response = self.bmc.get(chassis_path)
+        chassis_path = REDFISH_BASE + "/Chassis"
+        response = self._bmc.get(chassis_path)
         if response.status == HTTP_OK_200:
             response_data = json.loads(response.text)
-            paths = [member['@odata.id'] for member in response_data['Members']]
+            paths = [member["@odata.id"] for member in response_data["Members"]]
             for path in paths:
                 name = Path(path).name
-                if name.lower() in {'motherboard', 'self', 'gpu_board'}:
-                    self.boards[name] = {
-                        'power': {}
-                    }
+                if name.lower() in {"motherboard", "self", "gpu_board"}:
+                    self._boards[name] = {"power": {}}
 
-    def find_power_sensors(self):
-        power_sensors = []
-        for board in self.boards:
-            response = self._redfish_get(f'{REDFISH_BASE}/Chassis/{board}/Sensors')
-            sensors = [s.get('@odata.id', '') for s in response.get('Members', {})]
-            power_sensors += [s for s in sensors if 'pwr' in s.lower() or 'power' in s.lower()]
+    def init_sensors(self):
+        sensors = []
+        for board in self._boards:
+            response = self._redfish_get(f"{REDFISH_BASE}/Chassis/{board}/Sensors")
+            sensors += [s.get("@odata.id", "") for s in response.get("Members", {})]
 
+        for sensor in sensors:
+            name = Path(sensor).name.lower()
+            if "temp" in name:
+                self._sensors[name] = {
+                    "path": sensor,
+                    "kind": "THERMAL",
+                    "readings": {},
+                }
+            elif ("pwr" in name or "power" in name) and not name.startswith("cpu"):
+                self._sensors[name] = {"path": sensor, "kind": "POWER", "readings": {}}
 
-        for sensor in power_sensors:
-            sensor_name = Path(sensor).name
-            self.sensors[sensor_name] = {
-                'path': sensor,
-                'readings': {},
-                # TODO: can get this from ReadingType returned by sensor
-                'kind': 'POWER'
-            }
+    @property
+    def sensors(self):
+        return list(self._sensors)
+
+    @property
+    def power_sensors(self):
+        return [s for s, a in self._sensors.items() if a["kind"] == "POWER"]
 
     def sample_power(self):
         start_time = monotonic()
@@ -61,74 +69,69 @@ class Collector:
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 # Start the load operations and mark each future with its board_path
                 future_to_board = {
-                    executor.submit(self.get_power, f'{REDFISH_BASE}/Chassis/{board}'): board
-                    for board in self.boards
+                    executor.submit(self.get_power, f"{REDFISH_BASE}/Chassis/{board}"): board
+                    for board in self._boards
                 }
                 for future in concurrent.futures.as_completed(future_to_board):
                     board = future_to_board[future]
                     try:
                         power = future.result()
                     except Exception as e:
-                        print(f'{board} generated an exception: {e}')
+                        print(f"{board} generated an exception: {e}")
                     else:
                         time_delta = monotonic() - start_time
-                        self.boards[board]['power'][time_delta] = power
+                        self._boards[board]["power"][time_delta] = power
                         # print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
-
 
     def sample_sensors(self, collect_duration):
         start_time = monotonic()
         while monotonic() < start_time + collect_duration:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(self._sensors)) as executor:
                 future_to_sensor = {
-                    executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors
+                    executor.submit(self.read_sensor, sensor): sensor for sensor in self.power_sensors
                 }
-                time_delta = monotonic() - start_time # All samples have same timestamp
+                time_delta = monotonic() - start_time  # All samples have same timestamp
                 for future in concurrent.futures.as_completed(future_to_sensor):
                     sensor = future_to_sensor[future]
                     try:
                         reading = future.result()
                     except Exception as e:
-                        print(f'Sensor {sensor} generated an exception: {e}')
+                        print(f"Sensor {sensor} generated an exception: {e}")
                     else:
-                        self.sensors[sensor]['readings'][time_delta] = reading
+                        self._sensors[sensor]["readings"][time_delta] = reading
                         # print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
     def read_sensor(self, sensor):
-        sensor_path = self.sensors[sensor]['path']
+        sensor_path = self._sensors[sensor]["path"]
         response = self._redfish_get(sensor_path)
-        return response["Reading"] # Need to ensure that this is standardized
+        return response["Reading"]  # Need to ensure that this is standardized
 
     def get_power(self, board_path):
-        data = self._redfish_get(f'{board_path}/Power')
-        return data.get('PowerControl', [{}])[0].get('PowerConsumedWatts')
+        data = self._redfish_get(f"{board_path}/Power")
+        return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
 
     def _redfish_get(self, path):
         # print(f'GETing: {path}')
-        response = self.bmc.get(path)
+        response = self._bmc.get(path)
         if response.status == HTTP_OK_200:
             return json.loads(response.text)
         return None
 
-
     def sensor_readings_to_df(self):
         # Merge the readings
-        readings = {sensor: self.sensors[sensor]['readings'] for sensor in self.sensors}
+        readings = {sensor: self._sensors[sensor]["readings"] for sensor in self._sensors}
         df = pd.DataFrame(readings)
-        df.index.name = 'Timestamp'
+        df.index.name = "Timestamp"
         return df
 
-
-    def plot_sensors(self, save_file='plot.png'):
+    def plot_sensors(self, save_file="plot.png"):
         df = self.sensor_readings_to_df()
-        plt.legend(prop={'size': 9})
+        plt.legend(prop={"size": 9})
         df.plot(title="Power Draws")
         plt.savefig(save_file, dpi=140)
 
-
-    def save_to_excel(self, filename='sensors.xlsx'):
+    def save_to_excel(self, filename="sensors.xlsx"):
         self.sensor_readings_to_df().to_excel(filename)
-
 
     def max_values(self):
         df = self.sensor_readings_to_df()
@@ -139,13 +142,12 @@ class Collector:
         print(f"\n\nMax power drawn: {df.max().max():,.1f} Watts")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_cli()
     collector = Collector(
         args.bmc_hostname,
         args.bmc_username,
         args.bmc_password,
-
     )
 
     # collector.sample_power(10, 1)
@@ -160,9 +162,9 @@ if __name__ == '__main__':
     collector.sample_sensors(args.collect_duration)
     for sensor in collector.sensors:
         print(sensor)
-        print("=" * len(sensor), end='\n\n')
+        print("=" * len(sensor), end="\n\n")
 
-        for timestamp, reading in collector.sensors[sensor]['readings'].items():
+        for timestamp, reading in collector.sensors[sensor]["readings"].items():
             print(f"{timestamp:6.1f} {reading: 5.1f}")
 
     print(collector.sensor_readings_to_df())

@@ -54,7 +54,7 @@ class Collector:
                     else:
                         time_delta = time() - start_time
                         self.boards[path]['power'][time_delta] = power
-                        print(f"{time_delta:.1f>8}{path:<20}: {power:.1f} Watts")
+                        print(f"{time_delta:8.1f}{path:<20}: {power:.1f} Watts")
 
             sleep(1/sample_hz)
 

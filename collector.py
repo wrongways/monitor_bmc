@@ -60,7 +60,10 @@ class Collector:
         pass
 
     def __del__(self):
-        self.bmc.logout()
+        try:
+            self.bmc.logout()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

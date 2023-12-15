@@ -1,4 +1,3 @@
-import sqlite3
 import json
 from pathlib import Path
 from time import time
@@ -9,22 +8,22 @@ from config import SETTINGS
 REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
 
+
 class Collector:
     def __init__(self, bmc_url, bmc_username, bmc_password):
         """Sets up the bmc client - DOES NOT save the credentials"""
         self.bmc_url = bmc_url
-        self.bmc = redfish_client(bmc_url,bmc_username,bmc_password)
+        self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
         self.boards = {}
 
         self.bmc.login(auth="session")
         self.init_boards()
 
-
     def init_boards(self):
         self.motherboard_path = None
         chassis_path = self.hosturl + REDFISH_BASE + "/Chassis"
         response = self.bmc.get(chassis_path)
-        if response.status = HTTP_OK_200:
+        if response.status == HTTP_OK_200:
             response_data = json.loads(response.text)
             paths = [member["@odata.id"] for member in response_data["Members"]]
             for path in paths:
@@ -46,18 +45,16 @@ class Collector:
 
     def get_power(self, board_path):
         data = self._redfish_get(f"{SETTINGS.bmc_url}{board_path}/Power")
-        return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts"))
-
+        return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
 
     def _redfish_get(self, path):
-        response = self.bmc.get(chassis_path)
-        if response.status = HTTP_OK_200:
+        response = self.bmc.get(path)
+        if response.status == HTTP_OK_200:
             return json.loads(response.text)
         return None
 
     def plot_power(self, save_file=None):
         pass
-
 
     def __del__(self):
         self.bmc.logout()

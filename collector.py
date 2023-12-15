@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from time import time
+from time import time, sleep
 from redfish import redfish_client
 
 
@@ -44,7 +44,7 @@ class Collector:
                 time_delta = time() - start_time
                 self.boards[board_path]['power'][time_delta] = power
 
-            time.sleep(1/sample_hz)
+            sleep(1/sample_hz)
 
     def get_power(self, board_path):
         data = self._redfish_get(f"{board_path}/Power")

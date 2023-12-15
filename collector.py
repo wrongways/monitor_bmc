@@ -139,8 +139,13 @@ class Collector:
 
     def plot_sensors(self, save_file="plot.png"):
         df = self.sensor_readings_to_df()[self.power_sensors]
-        df.plot(title=f"Power Draws {self.bmc_hostname}")
-        plt.savefig(save_file, dpi=140)
+        with plt.xkcd():
+            df.plot(
+                title=f"Power Draws {self.bmc_hostname}",
+                ylabel="Power (Watts)",
+                fontsize=9,
+            )
+            plt.savefig(save_file, dpi=140)
 
     def save_to_excel(self, filename="sensors.xlsx"):
         self.sensor_readings_to_df()[self.power_sensors].to_excel(filename)

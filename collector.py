@@ -12,9 +12,8 @@ REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
 
 class Collector:
-    def __init__(self, bmc_hostname, bmc_username, bmc_password, collect_duration):
+    def __init__(self, bmc_hostname, bmc_username, bmc_password):
         '''Sets up the bmc client - DOES NOT save the credentials'''
-        self.collect_duration = collect_duration
         bmc_url = f'https://{bmc_hostname}'
         print(f'Connecting to {bmc_url} ...')
         self.bmc = redfish_client(bmc_url, bmc_username, bmc_password)
@@ -77,9 +76,9 @@ class Collector:
                         # print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
 
 
-    def sample_sensors(self):
+    def sample_sensors(self, collect_duration):
         start_time = monotonic()
-        while monotonic() < start_time + self.collect_duration:
+        while monotonic() < start_time + collect_duration:
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
                 future_to_sensor = {
                     executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors
@@ -130,7 +129,7 @@ if __name__ == '__main__':
         args.bmc_hostname,
         args.bmc_username,
         args.bmc_password,
-        args.collect_duration
+
     )
 
     # collector.sample_power(10, 1)
@@ -142,7 +141,7 @@ if __name__ == '__main__':
     for sensor, info in collector.sensors.items():
         print(f"{sensor:>25} {info['path']}")
 
-    collector.sample_sensors(20)
+    collector.sample_sensors(args.collect_duration)
     for sensor in collector.sensors:
         print(sensor)
         print("=" * len(sensor), end='\n\n')

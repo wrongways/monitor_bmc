@@ -91,7 +91,7 @@ if __name__ == "__main__":
         args.bmc_password
     )
     collector.sample_power(10, 1)
-    for board, samples in enumerate(collector.boards):
+    for board collector.boards:
         boardname = Path(board).name
         print(boardname)
-        print("\t", samples['power'])
+        print("\t", collector.boards[board]['power'])

@@ -119,10 +119,10 @@ class Collector:
         return pd.DataFrame(readings)
 
 
-    def plot_sensors(self, save_file=None):
+    def plot_sensors(self, save_file='plot.png'):
         df = self.sensor_readings_to_df()
         df.plot()
-        plt.save('plot.png')
+        plt.save(save_file)
 
 
 if __name__ == '__main__':
@@ -151,3 +151,4 @@ if __name__ == '__main__':
             print(f"{timestamp:6.1f} {reading: 5.1f}")
 
     print(collector.sensor_readings_to_df())
+    collector.plot_sensors()

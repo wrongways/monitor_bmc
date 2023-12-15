@@ -2,6 +2,7 @@ import argparse
 import json
 from pathlib import Path
 from time import time, sleep
+import concurrent.futures
 from redfish import redfish_client
 
 
@@ -39,10 +40,21 @@ class Collector:
     def sample_power(self, runtime_secs=300, sample_hz=1):
         start_time = time()
         while time() < start_time + runtime_secs:
-            for board_path in self.boards:
-                power = self.get_power(board_path)
-                time_delta = time() - start_time
-                self.boards[board_path]['power'][time_delta] = power
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                # Start the load operations and mark each future with its board_path
+                future_to_path = {
+                    executor.submit(self.get_power, path): path for path in self.boards
+                }
+                for future in concurrent.futures.as_completed(future_to_path):
+                    path = future_to_path[future]
+                    try:
+                        power = future.result()
+                    except Exception as e:
+                        print(f"{path} generated an exception: {e}")
+                    else:
+                        time_delta = time() - start_time
+                        self.boards[path]['power'][time_delta] = power
+                        print(f"{time_delta:.1f>8}{path:<20}: {power:.1f} Watts")
 
             sleep(1/sample_hz)
 
@@ -59,11 +71,11 @@ class Collector:
     def plot_power(self, save_file=None):
         pass
 
-    def __del__(self):
-        try:
-            self.bmc.logout()
-        except Exception:
-            pass
+    # def __del__(self):
+    #     try:
+    #         self.bmc.logout()
+    #     except Exception:
+    #         pass
 
 
 if __name__ == "__main__":

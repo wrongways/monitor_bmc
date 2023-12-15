@@ -42,7 +42,7 @@ class Collector:
             for board_path in self.boards:
                 power = self.get_power(board_path)
                 time_delta = time() - start_time
-                self.boards.power[time_delta] = power
+                self.boards[board_path]['power'][time_delta] = power
 
             time.sleep(1/sample_hz)
 

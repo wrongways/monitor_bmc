@@ -91,7 +91,7 @@ if __name__ == "__main__":
         args.bmc_password
     )
     collector.sample_power(10, 1)
-    for board collector.boards:
+    for board in collector.boards:
         boardname = Path(board).name
         print(boardname)
         print("\t", collector.boards[board]['power'])

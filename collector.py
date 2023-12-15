@@ -79,13 +79,9 @@ class Collector:
 
             sleep(1/sample_hz)
 
-    def sample_sensors(self, runtime_secs=300, sample_hz=1):
+    def sample_sensors(self, runtime_secs=300):
         start_time = monotonic()
-        sample_interval = 1/sample_hz
-        print(f"{sample_interval=}s")
         while monotonic() < start_time + runtime_secs:
-            sample_start = monotonic()
-            print(f"{sample_start=}")
             with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
                 future_to_sensor = {
                     executor.submit(self.read_sensor, sensor): sensor for sensor in self.sensors
@@ -101,13 +97,6 @@ class Collector:
                         self.sensors[sensor]['readings'][time_delta] = reading
                         print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
-                sleep_time = monotonic() - sample_start - sample_interval
-                print(f"{sleep_time=}")
-                # if sleep_time > 0:
-                #     print("sleeping")
-                #     sleep(sleep_time)
-
-
     def read_sensor(self, sensor):
         sensor_path = self.sensors[sensor]['path']
         response = self._redfish_get(sensor_path)
@@ -118,7 +107,7 @@ class Collector:
         return data.get('PowerControl', [{}])[0].get('PowerConsumedWatts')
 
     def _redfish_get(self, path):
-        print(f'GETing: {path}')
+        # print(f'GETing: {path}')
         response = self.bmc.get(path)
         if response.status == HTTP_OK_200:
             return json.loads(response.text)
@@ -127,14 +116,35 @@ class Collector:
     def plot_power(self, save_file=None):
         pass
 
-    # def __del__(self):
-    #     try:
-    #         self.bmc.logout()
-    #     except Exception:
-    #         pass
-
 
 if __name__ == '__main__':
+
+
+    args = parse_cli()
+    collector = Collector(
+        args.bmc_hostname,
+        args.bmc_username,
+        args.bmc_password
+    )
+
+    # collector.sample_power(10, 1)
+    # for board in collector.boards:
+    #     boardname = Path(board).name
+    #     print(boardname)
+    #     print('\t', collector.boards[board]['power'])
+
+    for sensor, info in collector.sensors.items():
+        print(f"{sensor:>25} {info['path']}")
+
+    collector.sample_sensors(20)
+    for sensor in collector.sensors:
+        print(sensor)
+        print("=" * len(sensor) end='\n\n')
+
+        for timestamp, reading in collector.sensors[sensor]['readings'].items():
+            print(f"{timestamp:6.1f} {reading: 5.1f}")
+
+
 
     def parse_cli():
         parser = argparse.ArgumentParser(
@@ -152,23 +162,3 @@ if __name__ == '__main__':
 
         return parser.parse_args()
 
-    args = parse_cli()
-    collector = Collector(
-        args.bmc_hostname,
-        args.bmc_username,
-        args.bmc_password
-    )
-    # collector.sample_power(10, 1)
-    # for board in collector.boards:
-    #     boardname = Path(board).name
-    #     print(boardname)
-    #     print('\t', collector.boards[board]['power'])
-
-    for sensor, info in collector.sensors.items():
-        print(f"{sensor:>25} {info['path']}")
-
-    collector.sample_sensors(20)
-    for sensor in collector.sensors:
-        print(sensor)
-        for timestamp, reading in collector.sensors[sensor]['readings'].items():
-            print(f"{timestamp:6.1f} {reading: 5.1f}")

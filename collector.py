@@ -16,6 +16,7 @@ class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
         """Sets up the bmc client"""
 
+        self.bmc_hostname = bmc_hostname
         bmc_url = f"https://{bmc_hostname}"
         print(f"Connecting to {bmc_url} ...")
         self._bmc = redfish_client(bmc_url, bmc_username, bmc_password)
@@ -124,13 +125,13 @@ class Collector:
         df.index.name = "Timestamp"
         return df
 
-    def plot_sensors(self, save_file="plot.png"):
+    def plot_sensors(self, save_file=f"{self.bmc_hostname}_plot.png"):
         df = self.sensor_readings_to_df()
         plt.legend(prop={"size": 9})
-        df.plot(title="Power Draws")
+        df.plot(title=f"Power Draws {self.bmc_hostname}")
         plt.savefig(save_file, dpi=140)
 
-    def save_to_excel(self, filename="sensors.xlsx"):
+    def save_to_excel(self, filename=f"{self.bmc_hostname}_sensors.xlsx"):
         self.sensor_readings_to_df().to_excel(filename)
 
     def max_values(self):

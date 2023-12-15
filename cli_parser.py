@@ -14,4 +14,7 @@ def parse_cli():
     parser.add_argument('--bmc_password', type=str,
                         help='Password for the bmc user')
 
+    parser.add_argument('--collect_duration', type=int,
+                        help='The duration in seconds for the collector to run')
+
     return parser.parse_args()

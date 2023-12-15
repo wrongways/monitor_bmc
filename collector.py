@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from time import monotonic, sleep
+from time import monotonic
 import concurrent.futures
 from redfish import redfish_client
 import pandas as pd

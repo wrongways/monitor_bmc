@@ -106,31 +106,31 @@ class Collector:
         return list(self._boards)
 
     @property
-    def power_urls(self):
+    def power_paths(self):
         return [f"{REDFISH_BASE}/Chassis/{board}/Power" for board in self.boards]
 
     @property
-    def thermal_urls(self):
+    def thermal_paths(self):
         return [f"{REDFISH_BASE}/Chassis/{board}/Thermal" for board in self.boards]
 
     @property
-    def collection_urls(self):
-        collection_urls = self.sensors + self.power_urls + self.thermal_urls
-        return collection_urls
+    def collection_paths(self):
+        collection_paths = self.sensors + self.power_paths + self.thermal_paths
+        return collection_paths
 
     def collect_samples(self, collect_duration):
         start_time = monotonic()
         while monotonic() < start_time + collect_duration:
             with concurrent.futures.ThreadPoolExecutor(
-                max_workers=len(self.collection_urls)
+                max_workers=len(self.collection_paths)
             ) as executor:
-                future_to_sensor = {
+                future_to_path = {
                     executor.submit(self._redfish_get(path)): path
-                    for path in self.collection_urls
+                    for path in self.collection_paths
                 }
                 time_delta = monotonic() - start_time  # All samples have same timestamp
-                for future in concurrent.futures.as_completed(future_to_sensor):
-                    path = future_to_sensor[future]
+                for future in concurrent.futures.as_completed(future_to_path):
+                    path = future_to_path[future]
                     boardname = path.split("/")[4]
                     try:
                         response = future.result()

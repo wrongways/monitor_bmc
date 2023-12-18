@@ -89,6 +89,8 @@ class Collector:
                         "readings": {},
                         "units": psu.get("Units"),
                     }
+    def add_thermal(self):
+        pass
 
     @property
     def sensors(self):

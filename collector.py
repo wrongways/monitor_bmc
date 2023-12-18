@@ -89,6 +89,7 @@ class Collector:
                         "readings": {},
                         "units": psu.get("Units"),
                     }
+
     def add_thermal(self):
         pass
 
@@ -115,7 +116,7 @@ class Collector:
     @property
     def collection_urls(self):
         collection_urls = self.sensors + self.power_urls + self.thermal_urls
-        print(collection_urls)
+        print(json.dumps(collection_urls, sort_keys=True, indent=4))
         return collection_urls
 
     def collect_samples(self, collect_duration):
@@ -175,7 +176,7 @@ class Collector:
         readings = {
             sensor: self._sensors[sensor]["readings"] for sensor in self._sensors
         }
-        print(readings[:2])
+        print(readings)
 
         df = pd.DataFrame(readings)
         df.index.name = "Timestamp"

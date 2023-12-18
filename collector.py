@@ -135,7 +135,7 @@ class Collector:
                     try:
                         response = future.result()
                     except Exception as e:
-                        print(f"Sensor {sensor} generated an exception: {e}")
+                        print(f"Sensor {path} generated an exception: {e}")
                     else:
                         if "Sensors" in path:
                             self.save_sensor_data(response, time_delta, path)

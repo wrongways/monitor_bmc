@@ -91,7 +91,27 @@ class Collector:
                     }
 
     def add_thermal(self):
-        pass
+        for path in self.thermal_paths:
+            response = self._redfish_get(path)
+            if (thermometers := response.get("Temperatures")) is not None:
+                for thermometer in thermometers:
+                    name = thermometer.get("Name") or thermometer.get("@odata.id").split("/")[-2:]
+                    self._thermal_temps[name] = {
+                        "name": name,
+                        "kind": "THERMAL",
+                        "readings": {},
+                        "units": thermometer.get("ReadingUnits") or thermometer.get("Units", "Celsius")
+                    }
+
+            if (fans := response.get("Fans")) is not None:
+                for fan in fans:
+                    name = fan.get("Name") or fan.get("@odata.id").split("/")[-2:]
+                    self._thermal_fans[name] = {
+                        "name": name,
+                        "kind": "FAN",
+                        "readings": {},
+                        "units": psu.get("ReadingUnits", "RPM"),
+                    }
 
     @property
     def sensors(self):
@@ -143,7 +163,7 @@ class Collector:
                         elif path.endswith("Power"):
                             self.save_power_data(response, time_delta, boardname)
                         elif path.endswith("Thermal"):
-                            self.save_thermal_data(response, time_delta, boardname)
+                            self.save_thermal_data(response, time_delta)
                         else:
                             print(f"Unexpected path: {path}")
 
@@ -165,8 +185,20 @@ class Collector:
                 print(f'{time_delta:8.1f}  {name:<65}: {psu_power:6.1f} Watts')
                 self._power_power_supplies[name]["readings"]["time_delta"] = psu_power
 
-    def save_thermal_data(self, response, time_delta, boardname):
-        pass
+    def save_thermal_data(self, response, time_delta):
+        if (thermometers := response.get("Temperatures")) is not None:
+            for thermometer in thermometers:
+                name = thermometer.get("Name") or thermometer.get("@odata.id").split("/")[-2:]
+                temp = thermometer.get("ReadingCelsius") or thermometer.get("Reading")
+                self._thermal_temps[name]["readings"][time_delta] = temp
+                print(f'{time_delta:8.1f}  {name:<65}: {temp:6.1f} ºC')
+
+        if (fans := response.get("Fans")) is not None:
+            for fan in fans:
+                name = fan.get("Name") or fan.get("@odata.id").split("/")[-2:]
+                rpm = fan.get("Reading")
+                self._thermal_fans[name]["readings"][time_delta] = rpm
+                print(f'{time_delta:8.1f}  {name:<65}: {rpm:6.1f} ºC')
 
     def _redfish_get(self, path):
         # print(f'GETing: {path}')
@@ -228,7 +260,8 @@ if __name__ == "__main__":
 
     collector.collect_samples(args.collect_duration)
 
-    print(collector.sensor_readings_to_df())
+    print("DataFrame\n---------")
+    print(collector.sensor_readings_to_df().head())
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")
     collector.plot_sensors(f"{host}_plot.png")
     collector.save_to_excel(f"{host}_sensors.xlsx")

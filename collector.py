@@ -114,7 +114,9 @@ class Collector:
 
     @property
     def collection_urls(self):
-        return [s.path for s in self.sensors] + self.power_urls + self.thermal_urls
+        collection_urls = self.sensors + self.power_urls + self.thermal_urls
+        print(collection_urls)
+        return collection_urls
 
     def collect_samples(self, collect_duration):
         start_time = monotonic()

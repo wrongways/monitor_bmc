@@ -116,9 +116,6 @@ class Collector:
     @property
     def collection_urls(self):
         collection_urls = self.sensors + self.power_urls + self.thermal_urls
-        print("Collection URLs")
-        print("-" * 14)
-        print(json.dumps(collection_urls, sort_keys=True, indent=4))
         return collection_urls
 
     def collect_samples(self, collect_duration):
@@ -141,20 +138,20 @@ class Collector:
                         print(f"Sensor {sensor} generated an exception: {e}")
                     else:
                         if "Sensors" in path:
-                            self.save_sensor_data(response, time_delta)
-                        elif "Power" in path:
+                            self.save_sensor_data(response, time_delta, path)
+                        elif path.endswith("Power"):
                             self.save_power_data(response, time_delta, boardname)
-                        elif "Thermal" in path:
+                        elif path.endswith("Thermal"):
                             self.save_thermal_data(response, time_delta, boardname)
                         else:
                             print(f"Unexpected path: {path}")
 
-                        # print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
-    def save_sensor_data(self, response, time_delta):
-        self._sensors[sensor]["readings"][time_delta] = response[
-            "Reading"
-        ]  # Need to ensure that this is standardized
+
+    def save_sensor_data(self, response, time_delta, path):
+        reading = response["Reading"] # Standardized ?
+        print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
+        self._sensors[path]["readings"][time_delta] = reading
 
     def save_power_data(self, response, time_delta, boardname):
         power = response.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
@@ -165,6 +162,9 @@ class Collector:
                 self._power_power_supplies[name]["readings"]["time_delta"] = psu.get(
                     "PowerInputWatts"
                 )
+
+    def save_thermal_data(response, time_delta, boardname):
+        pass
 
     def _redfish_get(self, path):
         # print(f'GETing: {path}')

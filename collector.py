@@ -22,12 +22,19 @@ class Collector:
         self._bmc = redfish_client(bmc_url, bmc_username, bmc_password)
         self._boards = {}
         self._sensors = {}
+        self._power = {}
+        self._power_power_supplies = {}
+        self._thermal_temps = {}
+        self._thermal_fans = {}
+
         self._bmc.login(auth="session")
 
-        self.init_boards()
-        self.init_sensors()
+        self.identify_boards()
+        self.identify_sensors()
+        self.add_power()
+        self.add_thermal()
 
-    def init_boards(self):
+    def identify_boards(self):
         self.motherboard_path = None
         chassis_path = REDFISH_BASE + "/Chassis"
         response = self._bmc.get(chassis_path)
@@ -39,27 +46,49 @@ class Collector:
                 if name.lower() in {"motherboard", "self", "gpu_board"}:
                     self._boards[name] = {"power": {}}
 
-    def init_sensors(self):
+    def identify_sensors(self):
         sensors = []
         for board in self._boards:
             response = self._redfish_get(f"{REDFISH_BASE}/Chassis/{board}/Sensors")
             sensors += [s.get("@odata.id", "") for s in response.get("Members", {})]
 
-        for sensor in sensors:
+        for sensor in [s for s in sensors if s]:
             name = Path(sensor).name.lower()
             if "temp" in name:
-                self._sensors[name] = {
-                    "path": sensor,
+                self._sensors[sensor] = {
+                    "name": name,
                     "kind": "THERMAL",
                     "readings": {},
+                    "units": None,
                 }
-            elif (
-                ("pwr" in name or "power" in name)
-                and not name.startswith("cpu")
-                and not name.startswith("rdstn_")
-                and not name.startswith("vr_")
-            ):
-                self._sensors[name] = {"path": sensor, "kind": "POWER", "readings": {}}
+            elif ("pwr" in name or "power" in name) and not name.startswith("vr_"):
+                self._sensors[sensor] = {
+                    "name": name,
+                    "kind": "POWER",
+                    "readings": {},
+                    "units": None,
+                }
+
+    def add_power(self):
+        for board in self.boards:
+            self._power[board] = {
+                "name": f"{board} power",
+                "kind": "POWER",
+                "readings": {},
+                "units": "Watts",
+            }
+
+        for path in self.power_urls:
+            power_resp = self._redfish_get(path)
+            if (power_supplies := power_resp.get("PowerSupplies")) is not None:
+                for psu in power_supplies:
+                    name = psu.get("Name") or psu.get("@odata.id").split("/")[-2:]
+                    self._power_power_supplies[name] = {
+                        "name": name,
+                        "kind": "POWER_SUPPLY",
+                        "readings": {},
+                        "units": psu.get("Units"),
+                    }
 
     @property
     def sensors(self):
@@ -69,57 +98,66 @@ class Collector:
     def power_sensors(self):
         return [s for s, a in self._sensors.items() if a["kind"] == "POWER"]
 
-    def sample_power(self):
-        start_time = monotonic()
-        while monotonic() < start_time + self.collect_duration:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                # Start the load operations and mark each future with its board_path
-                future_to_board = {
-                    executor.submit(
-                        self.get_power, f"{REDFISH_BASE}/Chassis/{board}"
-                    ): board
-                    for board in self._boards
-                }
-                for future in concurrent.futures.as_completed(future_to_board):
-                    board = future_to_board[future]
-                    try:
-                        power = future.result()
-                    except Exception as e:
-                        print(f"{board} generated an exception: {e}")
-                    else:
-                        time_delta = monotonic() - start_time
-                        self._boards[board]["power"][time_delta] = power
-                        # print(f'{time_delta:8.1f}  {board:<10}: {power:6.1f} Watts')
+    @property
+    def boards(self):
+        return list(self._boards)
 
-    def sample_sensors(self, collect_duration):
+    @property
+    def power_urls(self):
+        return [f"{REDFISH_BASE}/Chassis/{board}/Power" for board in self.boards]
+
+    @property
+    def thermal_urls(self):
+        return [f"{REDFISH_BASE}/Chassis/{board}/Thermal" for board in self.boards]
+
+    @property
+    def collection_urls(self):
+        return [s.path for s in self.sensors] + self.power_urls + self.thermal_urls
+
+    def collect_samples(self, collect_duration):
         start_time = monotonic()
         while monotonic() < start_time + collect_duration:
             with concurrent.futures.ThreadPoolExecutor(
-                max_workers=len(self._sensors)
+                max_workers=len(self.collection_urls)
             ) as executor:
                 future_to_sensor = {
-                    executor.submit(self.read_sensor, sensor): sensor
-                    for sensor in self.power_sensors
+                    executor.submit(self._redfish_get(path)): path
+                    for path in self.collection_urls
                 }
                 time_delta = monotonic() - start_time  # All samples have same timestamp
                 for future in concurrent.futures.as_completed(future_to_sensor):
-                    sensor = future_to_sensor[future]
+                    path = future_to_sensor[future]
+                    boardname = path.split("/")[4]
                     try:
-                        reading = future.result()
+                        response = future.result()
                     except Exception as e:
                         print(f"Sensor {sensor} generated an exception: {e}")
                     else:
-                        self._sensors[sensor]["readings"][time_delta] = reading
+                        if "Sensors" in path:
+                            self.save_sensor_data(response, time_delta)
+                        elif "Power" in path:
+                            self.save_power_data(response, time_delta, boardname)
+                        elif "Thermal" in path:
+                            self.save_thermal_data(response, time_delta, boardname)
+                        else:
+                            print(f"Unexpected path: {path}")
+
                         # print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
 
-    def read_sensor(self, sensor):
-        sensor_path = self._sensors[sensor]["path"]
-        response = self._redfish_get(sensor_path)
-        return response["Reading"]  # Need to ensure that this is standardized
+    def save_sensor_data(self, response, time_delta):
+        self._sensors[sensor]["readings"][time_delta] = response[
+            "Reading"
+        ]  # Need to ensure that this is standardized
 
-    def get_power(self, board_path):
-        data = self._redfish_get(f"{board_path}/Power")
-        return data.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
+    def save_power_data(self, response, time_delta, boardname):
+        power = response.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
+        self._power[boardname]["readings"][time_delta] = power
+        if (power_supplies := response.get("PowerSupplies")) is not None:
+            for psu in power_supplies:
+                name = psu.get("Name") or psu.get("@odata.id").split("/")[-2:]
+                self._power_power_supplies[name]["readings"]["time_delta"] = psu.get(
+                    "PowerInputWatts"
+                )
 
     def _redfish_get(self, path):
         # print(f'GETing: {path}')

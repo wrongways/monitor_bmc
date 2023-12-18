@@ -116,6 +116,8 @@ class Collector:
     @property
     def collection_urls(self):
         collection_urls = self.sensors + self.power_urls + self.thermal_urls
+        print("Collection URLs")
+        print("-" * 14)
         print(json.dumps(collection_urls, sort_keys=True, indent=4))
         return collection_urls
 
@@ -218,9 +220,9 @@ if __name__ == "__main__":
     #     print(boardname)
     #     print('\t', collector.boards[board]['power'])
 
-    print("Sensors:")
-    for sensor in collector.sensors:
-        print(f"\t{sensor}")
+    # print("Sensors:")
+    # for sensor in collector.sensors:
+    #     print(f"\t{sensor}")
 
     collector.collect_samples(args.collect_duration)
 

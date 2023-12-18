@@ -164,7 +164,7 @@ class Collector:
                     "PowerInputWatts"
                 )
 
-    def save_thermal_data(response, time_delta, boardname):
+    def save_thermal_data(self, response, time_delta, boardname):
         pass
 
     def _redfish_get(self, path):

@@ -78,7 +78,7 @@ class Collector:
                 "units": "Watts",
             }
 
-        for path in self.power_urls:
+        for path in self.power_paths:
             power_resp = self._redfish_get(path)
             if (power_supplies := power_resp.get("PowerSupplies")) is not None:
                 for psu in power_supplies:
@@ -121,11 +121,12 @@ class Collector:
     def collect_samples(self, collect_duration):
         start_time = monotonic()
         while monotonic() < start_time + collect_duration:
+            # Start the load operations and mark each future with its path
             with concurrent.futures.ThreadPoolExecutor(
                 max_workers=len(self.collection_paths)
             ) as executor:
                 future_to_path = {
-                    executor.submit(self._redfish_get(path)): path
+                    executor.submit(self._redfish_get, path): path
                     for path in self.collection_paths
                 }
                 time_delta = monotonic() - start_time  # All samples have same timestamp

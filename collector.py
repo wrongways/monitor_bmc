@@ -175,19 +175,21 @@ class Collector:
         readings = {
             sensor: self._sensors[sensor]["readings"] for sensor in self._sensors
         }
+        print(readings[:2])
+
         df = pd.DataFrame(readings)
         df.index.name = "Timestamp"
         return df
 
     def plot_sensors(self, save_file="plot.png"):
         df = self.sensor_readings_to_df()[self.power_sensors]
-        with plt.xkcd():
-            df.plot(
-                title=f"Power Draws {self.bmc_hostname}",
-                ylabel="Power (Watts)",
-                fontsize=9,
-            )
-            plt.savefig(save_file, dpi=140)
+
+        df.plot(
+            title=f"Power Draws {self.bmc_hostname}",
+            ylabel="Power (Watts)",
+            fontsize=9,
+        )
+        plt.savefig(save_file, dpi=140)
 
     def save_to_excel(self, filename="sensors.xlsx"):
         self.sensor_readings_to_df()[self.power_sensors].to_excel(filename)

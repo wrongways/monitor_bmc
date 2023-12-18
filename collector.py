@@ -217,7 +217,7 @@ if __name__ == "__main__":
     for sensor in collector.sensors:
         print(f"\t{sensor}")
 
-    collector.sample_sensors(args.collect_duration)
+    collector.collect_samples(args.collect_duration)
 
     print(collector.sensor_readings_to_df())
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")

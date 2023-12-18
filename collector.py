@@ -151,7 +151,7 @@ class Collector:
 
     def save_sensor_data(self, response, time_delta, path):
         reading = response["Reading"] # Standardized ?
-        print(f'{time_delta:8.1f}  {sensor:<25}: {reading:6.1f} Watts')
+        print(f'{time_delta:8.1f}  {path:<65}: {reading:6.1f} Watts')
         self._sensors[path]["readings"][time_delta] = reading
 
     def save_power_data(self, response, time_delta, boardname):

@@ -12,8 +12,8 @@ host = args.bmc_hostname.replace("bmc", "").replace("-", "")
 
 collector.collect_samples(args.collect_duration)
 dataframes = collector.as_dataframes()
-plotter = RedfishPlotter(dataframes)
-plotter.plot_power(f"{host}_power.png")
+plotter = RedfishPlotter(host, dataframes)
+plotter.plot_power()
 
 for i, df in dataframes.items():
     if len(df) > 0:

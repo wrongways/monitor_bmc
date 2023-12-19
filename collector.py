@@ -228,23 +228,25 @@ class Collector:
         return df
 
     def as_dataframes(self):
+        names = ["Power", "PowerSupplies", "Temperatures", "Fans", "Sensors"]
         domains = [
             self._power,
             self._power_power_supplies,
             self._thermal_temps,
             self._thermal_fans,
         ]
-        # for domain in domains:
-        #     readings = {domain: domain[source]["readings"] for source in domain}
+
         dataframes = [
             pd.DataFrame({source: domain[source]["readings"] for source in domain})
             for domain in domains
         ]
-        names = ["Power", "PowerSupplies", "Temperatures", "Fans"]
-        result = zip(names, dataframes)
-        for name, df in result:
-            print(f"{name:>15} {df.columns}")
-        return result
+        dataframes.append(self.sensor_readings_to_df())
+
+
+
+        return {name: dataframes[i] for i, name in enumerate(names)}
+
+
 
     def plot_sensors(self, save_file="plot.png"):
         df = self.sensor_readings_to_df()[self.power_sensors]

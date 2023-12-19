@@ -17,11 +17,11 @@ plotter = RedfishPlotter(host, dataframes)
 plotter.plot_power()
 plotter.plot_power_sensors()
 
-for name, df in dataframes.items():
-    print(f">>>>> Processing sheet: {name} <<<<<")
-    with pd.ExcelWriter(f"{host}.xlsx", engine="xlsxwriter", mode="a") as writer:
-        if len(df) > 0:
-            print(df.head())
 
+with pd.ExcelWriter(f"{host}.xlsx", engine="xlsxwriter") as writer:
+    for name, df in dataframes.items():
+        if len(df) > 0:
+            print(f">>>>> Processing sheet: {name} <<<<<")
+            print(df.head())
             df.to_csv(f"{host}_{name.lower()}.csv", encoding="utf-8")
-            df.to_excel(writer, sheet_name=name)
+            df.to_excel(writer, sheet_name=name.lower())

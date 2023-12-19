@@ -4,7 +4,6 @@ from time import monotonic
 import concurrent.futures
 from redfish import redfish_client
 import pandas as pd
-import matplotlib.pyplot as plt
 from cli_parser import parse_cli
 
 
@@ -194,9 +193,11 @@ class Collector:
                     thermometer.get("Name")
                     or thermometer.get("@odata.id").split("/")[-2:]
                 )
+                print(f"{thermometer=}")
                 temp = thermometer.get("ReadingCelsius") or thermometer.get("Reading")
                 self._thermal_temps[name]["readings"][time_delta] = temp
-                print(f"{time_delta:8.1f}  {name:<65}: {temp:6.1f} ºC")
+                if temp is not None:
+                    print(f"{time_delta:8.1f}  {name:<65}: {temp:6.1f} ºC")
 
         if (fans := response.get("Fans")) is not None:
             for fan in fans:
@@ -240,34 +241,32 @@ class Collector:
             pd.DataFrame({source: domain[source]["readings"] for source in domain})
             for domain in domains
         ]
-        dataframes.append(self.sensor_readings_to_df())
-
-
+        dataframes.append(self.sensor_readings_to_df()
 
         return {name: dataframes[i] for i, name in enumerate(names)}
 
 
 
-    def plot_sensors(self, save_file="plot.png"):
-        df = self.sensor_readings_to_df()[self.power_sensors]
-
-        df.plot(
-            title=f"Power Draws {self.bmc_hostname}",
-            ylabel="Power (Watts)",
-            fontsize=9,
-        )
-        plt.savefig(save_file, dpi=140)
-
-    def save_to_excel(self, filename="sensors.xlsx"):
-        self.sensor_readings_to_df()[self.power_sensors].to_excel(filename)
-
-    def max_power_values(self):
-        df = self.sensor_readings_to_df()[self.power_sensors]
-        print("Max readings per sensor")
-        for column in df:
-            print(f"{column:>25}: {df[column].max():.1f} Watts")
-
-        print(f"\nMax power drawn: {df.max().max():,.1f} Watts\n")
+#     def plot_sensors(self, save_file="plot.png"):
+#         df = self.sensor_readings_to_df()[self.power_sensors]
+#
+#         df.plot(
+#             title=f"Power Draws {self.bmc_hostname}",
+#             ylabel="Power (Watts)",
+#             fontsize=9,
+#         )
+#         plt.savefig(save_file, dpi=140)
+#
+#     def save_to_excel(self, filename="sensors.xlsx"):
+#         self.sensor_readings_to_df()[self.power_sensors].to_excel(filename)
+#
+#     def max_power_values(self):
+#         df = self.sensor_readings_to_df()[self.power_sensors]
+#         print("Max readings per sensor")
+#         for column in df:
+#             print(f"{column:>25}: {df[column].max():.1f} Watts")
+#
+#         print(f"\nMax power drawn: {df.max().max():,.1f} Watts\n")
 
 
 if __name__ == "__main__":

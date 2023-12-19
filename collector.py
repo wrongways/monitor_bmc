@@ -193,8 +193,7 @@ class Collector:
                     thermometer.get("Name")
                     or thermometer.get("@odata.id").split("/")[-2:]
                 )
-                print(f"{thermometer=}")
-                temp = thermometer.get("ReadingCelsius") or thermometer.get("Reading")
+                temp = thermometer.get("ReadingCelsius", thermometer.get("Reading"))
                 self._thermal_temps[name]["readings"][time_delta] = temp
                 if temp is not None:
                     print(f"{time_delta:8.1f}  {name:<65}: {temp:6.1f} ºC")

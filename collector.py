@@ -95,12 +95,16 @@ class Collector:
             response = self._redfish_get(path)
             if (thermometers := response.get("Temperatures")) is not None:
                 for thermometer in thermometers:
-                    name = thermometer.get("Name") or thermometer.get("@odata.id").split("/")[-2:]
+                    name = (
+                        thermometer.get("Name")
+                        or thermometer.get("@odata.id").split("/")[-2:]
+                    )
                     self._thermal_temps[name] = {
                         "name": name,
                         "kind": "THERMAL",
                         "readings": {},
-                        "units": thermometer.get("ReadingUnits") or thermometer.get("Units", "Celsius")
+                        "units": thermometer.get("ReadingUnits")
+                        or thermometer.get("Units", "Celsius"),
                     }
 
             if (fans := response.get("Fans")) is not None:
@@ -167,38 +171,39 @@ class Collector:
                         else:
                             print(f"Unexpected path: {path}")
 
-
-
     def save_sensor_data(self, response, time_delta, path):
-        reading = response["Reading"] # Standardized ?
-        print(f'{time_delta:8.1f}  {path:<65}: {reading:6.1f} Watts')
+        reading = response["Reading"]  # Standardized ?
+        print(f"{time_delta:8.1f}  {path:<65}: {reading:6.1f} Watts")
         self._sensors[path]["readings"][time_delta] = reading
 
     def save_power_data(self, response, time_delta, boardname):
         power = response.get("PowerControl", [{}])[0].get("PowerConsumedWatts")
         self._power[boardname]["readings"][time_delta] = power
-        print(f'{time_delta:8.1f}  {boardname:<65}: {power:6.1f} Watts')
+        print(f"{time_delta:8.1f}  {boardname:<65}: {power:6.1f} Watts")
         if (power_supplies := response.get("PowerSupplies")) is not None:
             for psu in power_supplies:
                 name = psu.get("Name") or psu.get("@odata.id").split("/")[-2:]
                 psu_power = psu.get("PowerInputWatts")
-                print(f'{time_delta:8.1f}  {name:<65}: {psu_power:6.1f} Watts')
+                print(f"{time_delta:8.1f}  {name:<65}: {psu_power:6.1f} Watts")
                 self._power_power_supplies[name]["readings"]["time_delta"] = psu_power
 
     def save_thermal_data(self, response, time_delta):
         if (thermometers := response.get("Temperatures")) is not None:
             for thermometer in thermometers:
-                name = thermometer.get("Name") or thermometer.get("@odata.id").split("/")[-2:]
+                name = (
+                    thermometer.get("Name")
+                    or thermometer.get("@odata.id").split("/")[-2:]
+                )
                 temp = thermometer.get("ReadingCelsius") or thermometer.get("Reading")
                 self._thermal_temps[name]["readings"][time_delta] = temp
-                print(f'{time_delta:8.1f}  {name:<65}: {temp:6.1f} ºC')
+                print(f"{time_delta:8.1f}  {name:<65}: {temp:6.1f} ºC")
 
         if (fans := response.get("Fans")) is not None:
             for fan in fans:
                 name = fan.get("Name") or fan.get("@odata.id").split("/")[-2:]
                 rpm = fan.get("Reading")
                 self._thermal_fans[name]["readings"][time_delta] = rpm
-                print(f'{time_delta:8.1f}  {name:<65}: {rpm:6.1f} ºC')
+                print(f"{time_delta:8.1f}  {name:<65}: {rpm:6.1f} ºC")
 
     def _redfish_get(self, path):
         # print(f'GETing: {path}')
@@ -222,12 +227,19 @@ class Collector:
         df.index.name = "Timestamp"
         return df
 
-
     def as_dataframes(self):
-        domains = [self._power, self._power_power_supplies, self._thermal_temps, self._thermal_fans]
+        domains = [
+            self._power,
+            self._power_power_supplies,
+            self._thermal_temps,
+            self._thermal_fans,
+        ]
         # for domain in domains:
         #     readings = {domain: domain[source]["readings"] for source in domain}
-        dataframes = [pd.Dataframe({domain: domain[source]["readings"] for source in domain}) for domain in domains]
+        dataframes = [
+            pd.Dataframe({domain: domain[source]["readings"] for source in domain})
+            for domain in domains
+        ]
         names = ["Power", "PowerSupplies", "Temperatures", "Fans"]
         result = zip(names, dataframes)
         for name, df in result:

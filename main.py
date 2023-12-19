@@ -24,4 +24,4 @@ for name, df in dataframes.items():
             print(df.head())
 
             df.to_csv(f"{host}_{name.lower()}.csv", encoding="utf-8")
-            df.to_excel(writer, sheet_name=name)
+            df.to_excel(writer, sheet_name=name, mode='a')

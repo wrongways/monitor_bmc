@@ -217,7 +217,7 @@ class Collector:
         # Use the last element of path as column/sensor name
         rename_dict = {col: col.split("/")[-1] for col in df.columns}
         print(f"{rename_dict=}")
-        df = df.rename(rename_dict)
+        df.rename(rename_dict, inplace=True)
         print(f"{df.columns=}")
         df.index.name = "Timestamp"
         return df

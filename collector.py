@@ -296,7 +296,7 @@ if __name__ == "__main__":
         print(df.head())
 
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")
-    collector.plot_sensors(f"{host}_plot.png")
+    # collector.plot_sensors(f"{host}_plot.png")
     # collector.save_to_excel(f"{host}_sensors.xlsx")
     stats_df.to_csv(f"{host}_sensors.csv", encoding="utf-8")
-    collector.max_power_values()
+    # collector.max_power_values()

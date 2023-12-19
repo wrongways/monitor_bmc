@@ -218,6 +218,7 @@ class Collector:
         rename_dict = {col: col.split("/")[-1] for col in df.columns}
         print(f"{rename_dict=}")
         df = df.rename(rename_dict)
+        print(f"{df.columns=}")
         df.index.name = "Timestamp"
         return df
 
@@ -264,9 +265,10 @@ if __name__ == "__main__":
     collector.collect_samples(args.collect_duration)
 
     print("DataFrame\n---------")
-    print(collector.sensor_readings_to_df().head())
+    stats_df = collector.sensor_readings_to_df()
+    print(stats_df.head())
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")
     collector.plot_sensors(f"{host}_plot.png")
     # collector.save_to_excel(f"{host}_sensors.xlsx")
-    collector.to_csv(f"{host}_sensors.csv", encoding="utf-8")
+    stats_df.to_csv(f"{host}_sensors.csv", encoding="utf-8")
     collector.max_power_values()

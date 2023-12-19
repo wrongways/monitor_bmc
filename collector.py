@@ -110,7 +110,7 @@ class Collector:
                         "name": name,
                         "kind": "FAN",
                         "readings": {},
-                        "units": psu.get("ReadingUnits", "RPM"),
+                        "units": fan.get("ReadingUnits", "RPM"),
                     }
 
     @property
@@ -212,9 +212,11 @@ class Collector:
         readings = {
             sensor: self._sensors[sensor]["readings"] for sensor in self._sensors
         }
-        print(readings)
 
         df = pd.DataFrame(readings)
+        # Use the last element of path as column/sensor name
+        rename_dict = {col: col.split("/")[-1] for col in df.columns}
+        df = df.rename(rename_dict)
         df.index.name = "Timestamp"
         return df
 
@@ -264,5 +266,6 @@ if __name__ == "__main__":
     print(collector.sensor_readings_to_df().head())
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")
     collector.plot_sensors(f"{host}_plot.png")
-    collector.save_to_excel(f"{host}_sensors.xlsx")
+    # collector.save_to_excel(f"{host}_sensors.xlsx")
+    collector.save_to_csv(f"{host}_sensors.csv")
     collector.max_power_values()

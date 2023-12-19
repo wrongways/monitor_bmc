@@ -18,6 +18,7 @@ plotter.plot_power()
 plotter.plot_power_sensors()
 
 for name, df in dataframes.items():
+    print(f">>>>> Processing sheet: {name} <<<<<")
     with pd.ExcelWriter(f"{host}.xlsx", engine="xlsxwriter") as writer:
         if len(df) > 0:
             print(df.head())

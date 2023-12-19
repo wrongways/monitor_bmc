@@ -1,3 +1,4 @@
+import pandas as pd
 from cli_parser import parse_cli
 from collector import Collector
 from plotter import RedfishPlotter
@@ -14,10 +15,12 @@ collector.collect_samples(args.collect_duration)
 dataframes = collector.as_dataframes()
 plotter = RedfishPlotter(host, dataframes)
 plotter.plot_power()
+plotter.plot_power_sensors()
 
-for i, df in dataframes.items():
-    if len(df) > 0:
-        print(df.head())
+for name, df in dataframes.items():
+    with pd.ExcelWriter(f'{host}.xlsx') as writer:
+        if len(df) > 0:
+            print(df.head())
 
-        df.to_csv(f"{host}_sensors.csv", encoding="utf-8")
-        df.to_excel(f"{host}_sensors.xlsx")
+            df.to_csv(f"{host}_{name.lower()}.csv", encoding="utf-8")
+            df.to_excel(writer, sheet_name=name)

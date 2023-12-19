@@ -220,7 +220,6 @@ class Collector:
         # Use the last element of path as column/sensor name
         rename_dict = {col: col.split("/")[-1] for col in df.columns}
         df.rename(rename_dict, axis="columns", inplace=True)
-        df.index.name = "Timestamp"
         return df
 
     def as_dataframes(self):
@@ -236,6 +235,12 @@ class Collector:
             pd.DataFrame({source: domain[source]["readings"] for source in domain})
             for domain in domains
         ]
+
+        # Add sensor dataframe to list
         dataframes.append(self.sensor_readings_to_df())
+
+        # Give the indexes a name
+        for df in dataframes:
+            df.index.name = "Timestamp"
 
         return {name: dataframes[i] for i, name in enumerate(names)}

@@ -267,5 +267,5 @@ if __name__ == "__main__":
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")
     collector.plot_sensors(f"{host}_plot.png")
     # collector.save_to_excel(f"{host}_sensors.xlsx")
-    collector.save_to_csv(f"{host}_sensors.csv")
+    collector.to_csv(f"{host}_sensors.csv", encoding="utf-8")
     collector.max_power_values()

@@ -4,8 +4,6 @@ from time import monotonic
 import concurrent.futures
 from redfish import redfish_client
 import pandas as pd
-from cli_parser import parse_cli
-
 
 REDFISH_BASE = "/redfish/v1"
 HTTP_OK_200 = 200
@@ -244,59 +242,3 @@ class Collector:
 
         return {name: dataframes[i] for i, name in enumerate(names)}
 
-
-
-#     def plot_sensors(self, save_file="plot.png"):
-#         df = self.sensor_readings_to_df()[self.power_sensors]
-#
-#         df.plot(
-#             title=f"Power Draws {self.bmc_hostname}",
-#             ylabel="Power (Watts)",
-#             fontsize=9,
-#         )
-#         plt.savefig(save_file, dpi=140)
-#
-#     def save_to_excel(self, filename="sensors.xlsx"):
-#         self.sensor_readings_to_df()[self.power_sensors].to_excel(filename)
-#
-#     def max_power_values(self):
-#         df = self.sensor_readings_to_df()[self.power_sensors]
-#         print("Max readings per sensor")
-#         for column in df:
-#             print(f"{column:>25}: {df[column].max():.1f} Watts")
-#
-#         print(f"\nMax power drawn: {df.max().max():,.1f} Watts\n")
-
-
-if __name__ == "__main__":
-    args = parse_cli()
-    collector = Collector(
-        args.bmc_hostname,
-        args.bmc_username,
-        args.bmc_password,
-    )
-
-    # collector.sample_power(10, 1)
-    # for board in collector.boards:
-    #     boardname = Path(board).name
-    #     print(boardname)
-    #     print('\t', collector.boards[board]['power'])
-
-    # print("Sensors:")
-    # for sensor in collector.sensors:
-    #     print(f"\t{sensor}")
-
-    collector.collect_samples(args.collect_duration)
-
-    print("DataFrame\n---------")
-    stats_df = collector.sensor_readings_to_df()
-    print(stats_df.head())
-    for name, df in collector.as_dataframes().items():
-        print(f"{name}\n{'*' * len(name)}")
-        print(df.head())
-
-    host = args.bmc_hostname.replace("bmc", "").replace("-", "")
-    # collector.plot_sensors(f"{host}_plot.png")
-    # collector.save_to_excel(f"{host}_sensors.xlsx")
-    stats_df.to_csv(f"{host}_sensors.csv", encoding="utf-8")
-    # collector.max_power_values()

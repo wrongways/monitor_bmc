@@ -212,9 +212,7 @@ class Collector:
 
     def sensor_readings_to_df(self):
         # Merge the readings
-        readings = {
-            sensor: self._sensors[sensor]["readings"] for sensor in self._sensors
-        }
+        readings = {sensor: self._sensors[sensor]["readings"] for sensor in self._sensors}
 
         df = pd.DataFrame(readings)
         # Use the last element of path as column/sensor name

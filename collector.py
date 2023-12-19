@@ -204,7 +204,7 @@ class Collector:
                 name = fan.get("Name") or fan.get("@odata.id").split("/")[-2:]
                 rpm = fan.get("Reading")
                 self._thermal_fans[name]["readings"][time_delta] = rpm
-                print(f"{time_delta:8.1f}  {name:<65}: {rpm:6.1f} ºC")
+                print(f"{time_delta:8.1f}  {name:<65}: {rpm:6.1f} RPM")
 
     def _redfish_get(self, path):
         # print(f'GETing: {path}')
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     print("DataFrame\n---------")
     stats_df = collector.sensor_readings_to_df()
     print(stats_df.head())
-    for name, df in collector.as_dataframes():
+    for name, df in collector.as_dataframes().items():
         print(f"{name}\n{'*' * len(name)}")
         print(df.head())
 

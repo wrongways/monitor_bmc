@@ -16,6 +16,7 @@ dataframes = collector.as_dataframes()
 plotter = RedfishPlotter(host, dataframes)
 plotter.plot_power()
 plotter.plot_power_sensors()
+plotter.plot_temperature_sensors()
 plotter.plot_temperatues()
 
 

@@ -37,7 +37,9 @@ class RedfishPlotter:
             savefilename = f"{self._hostname}_power_sensors.png"
 
         df = self._dataframes["Sensors"]
-        power_columns = [col for col in df.columns if 'pwr' in col.lower() or 'power' in col.lower()]
+        power_columns = [
+            col for col in df.columns if "pwr" in col.lower() or "power" in col.lower()
+        ]
         df = df[power_columns]
         print(df.head())
 
@@ -47,4 +49,3 @@ class RedfishPlotter:
             fontsize=9,
         )
         plt.savefig(savefilename, dpi=144)
-

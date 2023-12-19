@@ -241,7 +241,7 @@ class Collector:
             pd.DataFrame({source: domain[source]["readings"] for source in domain})
             for domain in domains
         ]
-        dataframes.append(self.sensor_readings_to_df()
+        dataframes.append(self.sensor_readings_to_df())
 
         return {name: dataframes[i] for i, name in enumerate(names)}
 

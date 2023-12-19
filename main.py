@@ -20,4 +20,4 @@ for i, df in dataframes.items():
         print(df.head())
 
         df.to_csv(f"{host}_sensors.csv", encoding="utf-8")
-        df.save_to_excel(f"{host}_sensors.xlsx")
+        df.to_excel(f"{host}_sensors.xlsx")

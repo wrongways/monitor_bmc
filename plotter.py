@@ -49,3 +49,11 @@ class RedfishPlotter:
             fontsize=9,
         )
         plt.savefig(savefilename, dpi=144)
+
+    def plot_temperatues(self, savefilename=""):
+        if savefilename == "":
+            savefilename = f"{self._hostname}_temperatures.png"
+
+        self._dataframes["Temperatures"].plot(
+            title=f"Temperatures {self._hostname}", ylabel="Temp ºC", fontsize=8
+        )

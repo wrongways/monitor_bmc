@@ -237,7 +237,7 @@ class Collector:
         # for domain in domains:
         #     readings = {domain: domain[source]["readings"] for source in domain}
         dataframes = [
-            pd.Dataframe({domain: domain[source]["readings"] for source in domain})
+            pd.DataFrame({domain: domain[source]["readings"] for source in domain})
             for domain in domains
         ]
         names = ["Power", "PowerSupplies", "Temperatures", "Fans"]

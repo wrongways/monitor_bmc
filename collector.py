@@ -222,6 +222,18 @@ class Collector:
         df.index.name = "Timestamp"
         return df
 
+
+    def as_dataframes(self):
+        domains = [self._power, self._power_power_supplies, self._thermal_temps, self._thermal_fans]
+        # for domain in domains:
+        #     readings = {domain: domain[source]["readings"] for source in domain}
+        dataframes = [pd.Dataframe({domain: domain[source]["readings"] for source in domain}) for domain in domains]
+        names = ["Power", "PowerSupplies", "Temperatures", "Fans"]
+        result = zip(names, dataframes)
+        for name, df in result:
+            print(f"{name:>15} {df.columns}")
+        return result
+
     def plot_sensors(self, save_file="plot.png"):
         df = self.sensor_readings_to_df()[self.power_sensors]
 
@@ -267,6 +279,10 @@ if __name__ == "__main__":
     print("DataFrame\n---------")
     stats_df = collector.sensor_readings_to_df()
     print(stats_df.head())
+    for name, df in collector.as_dataframes():
+        print(f"{name}\n{'*' * len(name)}")
+        print(df.head())
+
     host = args.bmc_hostname.replace("bmc", "").replace("-", "")
     collector.plot_sensors(f"{host}_plot.png")
     # collector.save_to_excel(f"{host}_sensors.xlsx")

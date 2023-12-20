@@ -27,3 +27,6 @@ with pd.ExcelWriter(f"{host}.xlsx", engine="xlsxwriter") as writer:
             print(df.head())
             df.to_csv(f"{host}_{name.lower()}.csv", encoding="utf-8")
             df.to_excel(writer, sheet_name=name.lower())
+
+
+df.to_pickle(f'{host}_df.pkl')

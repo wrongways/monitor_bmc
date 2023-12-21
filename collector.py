@@ -60,7 +60,7 @@ class Collector:
         print('Ignored boards')
         print(RED)
         all_boards = [Path(board).name for board in paths]
-        ignored = set(all_boards) - set(self._boards.keys)
+        ignored = set(all_boards) - set(self._boards.keys())
         for board in sorted(ignored):
             print(f'\t{board.lower()}')
         print(RESET)
@@ -97,7 +97,7 @@ class Collector:
 
         print('Ignored sensors')
         print(RED)
-        ignored = set(sensors) - set(self.sensors.keys)
+        ignored = set(sensors) - set(self.sensors.keys())
         for sensor in sorted(ignored):
             sensor_name = sensor.split('/')[-1].lower()
             print(f'\t{sensor_name}')

@@ -217,9 +217,9 @@ class Collector:
         if (power_supplies := response.get('PowerSupplies')) is not None:
             for psu in power_supplies:
                 name = psu.get('Name') or psu.get('@odata.id').split('/')[-2:]
-                psu_power = psu.get('PowerInputWatts')
-                print(f'{time_delta:8.1f}  {name:<65}: {psu_power:6.1f} Watts')
-                self._power_power_supplies[name]['readings'][time_delta] = psu_power
+                if (psu_power := psu.get('PowerInputWatts')) is not None:
+                    print(f'{time_delta:8.1f}  {name:<65}: {psu_power:6.1f} Watts')
+                    self._power_power_supplies[name]['readings'][time_delta] = psu_power
 
     def save_thermal_data(self, response, time_delta):
         if (thermometers := response.get('Temperatures')) is not None:

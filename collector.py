@@ -97,7 +97,7 @@ class Collector:
 
         print('Ignored sensors')
         print(RED)
-        ignored = set(sensors) - set(self.sensors.keys())
+        ignored = set(sensors) - set(self.sensors)
         for sensor in sorted(ignored):
             sensor_name = sensor.split('/')[-1].lower()
             print(f'\t{sensor_name}')

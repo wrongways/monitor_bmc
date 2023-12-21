@@ -17,8 +17,7 @@ class RedfishPlotter:
         if savefilename == '':
             savefilename = f'{self._hostname}_power.png'
 
-        df = self._dataframes['Power']
-        df.plot(
+        self._dataframes['Power'].plot(
             title=f'Power Draws {self._hostname}',
             ylabel='Power (Watts)',
             fontsize=9,
@@ -32,17 +31,15 @@ class RedfishPlotter:
             savefilename = f'{self._hostname}_power_sensors.png'
 
         df = self._dataframes['Sensors']
-
-        if filter:
-            df = self.filter(df)
-
         power_columns = [
             col for col in df.columns if 'pwr' in col.lower() or 'power' in col.lower()
         ]
-        df = df[power_columns]
+        df_power_sensors = df[power_columns]
+        if filter:
+            df_power_sensors = self.filter(df_power_sensors)
         print(df.head())
 
-        df.plot(
+        df_power_sensors.plot(
             title=f'Power Draws {self._hostname}',
             ylabel='Power (Watts)',
             fontsize=9,
@@ -58,9 +55,9 @@ class RedfishPlotter:
 
         df = self._dataframes['Sensors']
         temperature_columns = [col for col in df.columns if 'temp' in col.lower()]
-        df = df[temperature_columns]
+        df_temperature_sensors = df[temperature_columns]
 
-        df.plot(
+        df_temperature_sensors.plot(
             title=f'Temperature Sensors {self._hostname}',
             ylabel='Temp (ºC)',
             fontsize=8,

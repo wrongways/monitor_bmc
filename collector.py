@@ -11,6 +11,11 @@ from redfish import redfish_client
 REDFISH_BASE = '/redfish/v1'
 HTTP_OK_200 = 200
 
+ESC = '\033['
+RED = f'{ESC}38;5;196m'
+GREEN = f'{ESC}38;5;118m'
+RESET = f'{ESC}0m'
+
 
 class Collector:
     def __init__(self, bmc_hostname, bmc_username, bmc_password):
@@ -46,6 +51,20 @@ class Collector:
                 if name.lower() in {'motherboard', 'self', 'gpu_board'}:
                     self._boards[name] = {'power': {}}
 
+        print('Monitored boards:')
+        print(GREEN)
+        for board in sorted(self._boards):
+            print(f'\t{board.lower()}')
+        print(RESET)
+
+        print('Ignored boards')
+        print(RED)
+        all_boards = [Path(board).name for board in paths]
+        ignored = set(all_boards) - set(self._boards.keys)
+        for board in sorted(ignored):
+            print(f'\t{board.lower()}')
+        print(RESET)
+
     def identify_sensors(self):
         sensors = []
         for board in self._boards:
@@ -68,6 +87,21 @@ class Collector:
                     'readings': {},
                     'units': None,
                 }
+
+        print('Monitored sensors:')
+        print(GREEN)
+        for sensor in sorted(self.sensors):
+            sensor_name = sensor.split('/')[-1].lower()
+            print(f'\t{sensor_name}')
+        print(RESET)
+
+        print('Ignored sensors')
+        print(RED)
+        ignored = set(sensors) - set(self.sensors.keys)
+        for sensor in sorted(ignored):
+            sensor_name = sensor.split('/')[-1].lower()
+            print(f'\t{sensor_name}')
+        print(RESET)
 
     def add_power(self):
         for board in self.boards:

@@ -99,7 +99,7 @@ class RedfishPlotter:
         idx = pass_max.index
 
         # Filter the list of column names if pass_max is true for column
-        pass_cols = [idx[i] for i, v in enumerate(pass_max)]
+        pass_cols = [idx[i] for i, v in enumerate(pass_max) if v]
 
         # return dataframe with the passing columns
-        return df[pass_cols]
+        return df.loc[:, pass_cols]

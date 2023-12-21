@@ -56,6 +56,10 @@ class RedfishPlotter:
         df = self._dataframes['Sensors']
         temperature_columns = [col for col in df.columns if 'temp' in col.lower()]
         df_temperature_sensors = df[temperature_columns]
+        print(f"Temperature sensor: {df.columns=}")
+        print(f"Temperature sensor: {temperature_columns=}")
+        print(f"Temperature sensor: {df_temperature_sensors.columns=}")
+        print(f"Temperature sensor: {df_temperature_sensors.head()=}")
 
         df_temperature_sensors.plot(
             title=f'Temperature Sensors {self._hostname}',
